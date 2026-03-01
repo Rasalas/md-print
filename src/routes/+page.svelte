@@ -209,8 +209,31 @@
 	}
 
 	@media print {
+		.app-shell {
+			height: auto;
+			overflow: visible;
+		}
+
 		.mobile-tabs {
 			display: none !important;
+		}
+
+		.app-layout {
+			display: block !important;
+			height: auto !important;
+			overflow: visible !important;
+		}
+
+		.editor-panel,
+		.resize-handle {
+			display: none !important;
+		}
+
+		.preview-panel {
+			display: block !important;
+			overflow: visible !important;
+			height: auto !important;
+			width: 100% !important;
 		}
 	}
 </style>

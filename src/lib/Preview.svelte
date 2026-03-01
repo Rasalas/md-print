@@ -199,14 +199,34 @@
 	}
 
 	@media print {
-		.preview-panel-header {
+		.preview-container {
+			display: block !important;
+			height: auto !important;
+			overflow: visible !important;
+			background: white !important;
+		}
+
+		.preview-panel-header,
+		.panel-header {
 			display: none !important;
 		}
 
 		.preview-scroll {
+			display: block !important;
 			padding: 0 !important;
 			overflow: visible !important;
+			height: auto !important;
 			background: white !important;
+		}
+
+		.paper {
+			width: 100% !important;
+			max-width: none !important;
+			margin: 0 !important;
+			padding: 0 !important;
+			box-shadow: none !important;
+			border: none !important;
+			border-radius: 0 !important;
 		}
 	}
 </style>
