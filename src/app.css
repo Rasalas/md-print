@@ -340,9 +340,19 @@ ul, ol {
 
 /* --- Page Gap (visual page separator) ---------------------- */
 .paper .page-gap {
-	margin: 30mm -20mm 25mm;
-	height: 2em;
+	margin: 10mm -20mm 8mm;
+	height: 1.5em;
 	background: #1a181e;
+}
+
+/* --- Page Number (bottom of each page in preview) ---------- */
+.paper .page-number {
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding-bottom: 5mm;
+	font-size: 10pt;
+	color: var(--paper-text-muted);
 }
 
 /* --- Code: Inline ------------------------------------------ */
@@ -612,26 +622,25 @@ ul, ol {
    ============================================================ */
 
 @media print {
-	/* Hide all app UI */
+	/* --- App Layout Overrides ---
+	   !important is needed to override Svelte-scoped component styles
+	   which have higher specificity (.class.svelte-xxx > .class). */
 	.app-header,
-	.editor-panel,
-	.editor-container,
-	.resize-handle,
-	.mobile-tabs,
 	.panel-header,
-	.preview-panel-header {
+	.mobile-tabs,
+	.resize-handle {
 		display: none !important;
 	}
 
 	body {
-		background: white;
-		overflow: visible;
+		background: white !important;
+		overflow: visible !important;
 	}
 
-	/* Flatten layout */
 	.app-shell {
-		height: auto;
-		overflow: visible;
+		height: auto !important;
+		overflow: visible !important;
+		animation: none !important;
 	}
 
 	.app-layout {
@@ -640,13 +649,15 @@ ul, ol {
 		overflow: visible !important;
 	}
 
+	.editor-panel {
+		display: none !important;
+	}
+
 	.preview-panel {
 		display: block !important;
 		overflow: visible !important;
 		height: auto !important;
 		width: 100% !important;
-		background: white !important;
-		padding: 0 !important;
 	}
 
 	.preview-container {
@@ -664,14 +675,13 @@ ul, ol {
 		background: white !important;
 	}
 
-	/* Paper fills full page */
 	.paper {
 		width: 100% !important;
 		max-width: none !important;
+		min-height: auto !important;
 		margin: 0 !important;
 		padding: 0 !important;
 		box-shadow: none !important;
-		border: none !important;
 		border-radius: 0 !important;
 	}
 
@@ -679,6 +689,8 @@ ul, ol {
 	@page {
 		margin: 25mm 20mm 30mm 20mm;
 	}
+
+	/* --- Content Print Rules --- */
 
 	/* Heading pagination control */
 	h1, h2, h3, h4, h5, h6 {
@@ -716,28 +728,29 @@ ul, ol {
 		max-width: 100% !important;
 	}
 
-	/* Hide page gaps and fillers in print */
+	/* Hide preview-only pagination elements */
 	.paper .page-gap,
-	.paper .page-filler {
+	.paper .page-filler,
+	.paper .page-number {
 		display: none !important;
 	}
 
-	/* Show pagebreaks in print even if paginated in screen */
+	/* Restore pagebreaks hidden by pagination */
 	.paper .pagebreak.paginated {
 		display: block !important;
 	}
 
 	/* Page break */
 	.paper .pagebreak {
-		border: none;
-		margin: 0;
-		height: 0;
+		border: none !important;
+		margin: 0 !important;
+		height: 0 !important;
 		page-break-before: always;
 		break-before: page;
 	}
 
 	.paper .pagebreak::after {
-		display: none;
+		display: none !important;
 	}
 
 	/* Avoid blank pages */

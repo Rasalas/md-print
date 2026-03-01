@@ -33,7 +33,7 @@
 		return style;
 	});
 
-	let paperStyle = $derived(`width: ${paper.width}; min-height: ${paper.page.split(' ')[1]};`);
+	let paperStyle = $derived(`--paper-width: ${paper.width}; --paper-min-h: ${paper.page.split(' ')[1]};`);
 
 	// TOC HTML
 	let tocHtml = $derived.by(() => {
@@ -70,6 +70,7 @@
 		appState.paperSize;
 		appState.theme;
 		appState.showToc;
+		appState.showPageNumbers;
 
 		tick().then(() => {
 			if (paperRef) paginatePreview(paperRef);
@@ -80,9 +81,8 @@
 		// Skip on mobile widths
 		if (el.offsetWidth < 400) return;
 
-		// 1. Remove existing gaps, fillers, and paginated classes (idempotent)
-		for (const gap of el.querySelectorAll('.page-gap')) gap.remove();
-		for (const fill of el.querySelectorAll('.page-filler')) fill.remove();
+		// 1. Remove existing gaps, fillers, page numbers, and paginated classes (idempotent)
+		for (const e of el.querySelectorAll('.page-gap, .page-filler, .page-number')) e.remove();
 		for (const pb of el.querySelectorAll('.paginated')) pb.classList.remove('paginated');
 
 		// 2. Measure content height per page via probe
@@ -110,13 +110,15 @@
 		let usedBeforeLastHeading = 0; // `used` just before that heading
 		let contentAfterHeading = 0;   // height accumulated after the heading
 
+		const showNums = appState.showPageNumbers;
+
 		for (const child of children) {
 			const h = child.offsetHeight;
 
 			// Manual pagebreak
 			if (child.classList.contains('pagebreak')) {
 				child.classList.add('paginated');
-				el.insertBefore(createPageGap(pageNum), child);
+				insertBreak(el, child, pageNum, used, slotHeight, showNums);
 				used = 0;
 				pageNum++;
 				lastHeading = null;
@@ -130,11 +132,11 @@
 				// content, pull it (and everything after it) to the
 				// next page so it doesn't sit stranded at the bottom.
 				if (lastHeading && contentAfterHeading < minAfterHeading) {
-					el.insertBefore(createPageGap(pageNum), lastHeading);
+					insertBreak(el, lastHeading, pageNum, usedBeforeLastHeading, slotHeight, showNums);
 					pageNum++;
 					used = (used - usedBeforeLastHeading) + h;
 				} else {
-					el.insertBefore(createPageGap(pageNum), child);
+					insertBreak(el, child, pageNum, used, slotHeight, showNums);
 					pageNum++;
 					used = h;
 				}
@@ -158,20 +160,32 @@
 			}
 		}
 
-		// 4. Pad last page to full height
+		// 4. Pad last page to full height (with optional page number)
 		if (pageNum > 1 && used > 0 && used < slotHeight) {
 			const filler = document.createElement('div');
 			filler.className = 'page-filler';
+			if (showNums) {
+				filler.classList.add('page-number');
+				filler.textContent = String(pageNum);
+			}
 			filler.style.height = (slotHeight - used) + 'px';
 			el.appendChild(filler);
 		}
 	}
 
-	function createPageGap(pageNumber) {
+	function insertBreak(parent, beforeEl, pageNum, usedHeight, slotHeight, showNums) {
+		// Optional page number filling remaining space on the ending page
+		if (showNums) {
+			const pn = document.createElement('div');
+			pn.className = 'page-number';
+			pn.textContent = String(pageNum);
+			pn.style.height = Math.max(0, slotHeight - usedHeight) + 'px';
+			parent.insertBefore(pn, beforeEl);
+		}
+		// Dark gap strip between pages
 		const gap = document.createElement('div');
 		gap.className = 'page-gap';
-		gap.setAttribute('data-page', pageNumber);
-		return gap;
+		parent.insertBefore(gap, beforeEl);
 	}
 </script>
 
@@ -231,8 +245,9 @@
 	}
 
 	.paper {
+		width: var(--paper-width, 210mm);
 		max-width: 210mm;
-		min-height: 297mm;
+		min-height: var(--paper-min-h, 297mm);
 		padding: 25mm 20mm 30mm 20mm;
 		box-shadow:
 			0 1px 3px rgba(0, 0, 0, 0.3),
