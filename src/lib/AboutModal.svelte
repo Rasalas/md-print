@@ -17,7 +17,8 @@
 <svelte:window onkeydown={handleKey} />
 
 {#if open}
-	<div class="backdrop" onclick={handleBackdrop} role="dialog" aria-modal="true" aria-label="Über md·print">
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<div class="backdrop" onclick={handleBackdrop} onkeydown={handleKey} role="dialog" aria-modal="true" aria-label="Über md·print" tabindex="-1">
 		<div class="modal">
 			<button class="close-btn" onclick={close} title="Schließen">
 				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

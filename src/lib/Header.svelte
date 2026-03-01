@@ -183,7 +183,7 @@
 		white-space: nowrap;
 	}
 
-.header-controls {
+	.header-controls {
 		display: flex;
 		align-items: center;
 		gap: 0.8em;

@@ -40,96 +40,76 @@ function slugify(text) {
 }
 
 /**
+ * Protect code blocks from transformation, apply a callback, then restore them.
+ */
+function withProtectedCode(html, tag, transform) {
+	const blocks = [];
+
+	let result = html.replace(/<pre[\s\S]*?<\/pre>/gi, (match) => {
+		blocks.push(match);
+		return `\x00${tag}${blocks.length - 1}\x00`;
+	});
+
+	result = result.replace(/<code[\s\S]*?<\/code>/gi, (match) => {
+		blocks.push(match);
+		return `\x00${tag}${blocks.length - 1}\x00`;
+	});
+
+	result = transform(result);
+
+	return result.replace(new RegExp(`\x00${tag}(\\d+)\x00`, 'g'), (_, idx) => blocks[Number(idx)]);
+}
+
+/**
  * Process KaTeX math expressions.
  * Protects code blocks/inline code first, then processes $$...$$ and $...$.
  */
 function processKaTeX(html) {
-	// Step 1: Protect code blocks and inline code with placeholders
-	const codeBlocks = [];
-	let protectedHtml = html;
+	return withProtectedCode(html, 'KATEX', (text) => {
+		// Display math $$...$$
+		text = text.replace(/\$\$([\s\S]+?)\$\$/g, (match, tex) => {
+			try {
+				return katex.renderToString(tex.trim(), {
+					displayMode: true,
+					throwOnError: false,
+					trust: true
+				});
+			} catch {
+				return `<span class="katex-error" title="KaTeX error">${match}</span>`;
+			}
+		});
 
-	// Protect <pre>...</pre> blocks
-	protectedHtml = protectedHtml.replace(/<pre[\s\S]*?<\/pre>/gi, (match) => {
-		const idx = codeBlocks.length;
-		codeBlocks.push(match);
-		return `\x00CODEBLOCK${idx}\x00`;
+		// Inline math $...$
+		// Avoid matching things like $5 or price $10 — require non-space after opening and before closing $
+		text = text.replace(/\$([^\s$](?:[^$]*?[^\s$])?)\$/g, (match, tex) => {
+			try {
+				return katex.renderToString(tex.trim(), {
+					displayMode: false,
+					throwOnError: false,
+					trust: true
+				});
+			} catch {
+				return `<span class="katex-error" title="KaTeX error">${match}</span>`;
+			}
+		});
+
+		return text;
 	});
-
-	// Protect <code>...</code> inline
-	protectedHtml = protectedHtml.replace(/<code[\s\S]*?<\/code>/gi, (match) => {
-		const idx = codeBlocks.length;
-		codeBlocks.push(match);
-		return `\x00CODEBLOCK${idx}\x00`;
-	});
-
-	// Step 2: Process display math $$...$$
-	protectedHtml = protectedHtml.replace(/\$\$([\s\S]+?)\$\$/g, (match, tex) => {
-		try {
-			return katex.renderToString(tex.trim(), {
-				displayMode: true,
-				throwOnError: false,
-				trust: true
-			});
-		} catch {
-			return `<span class="katex-error" title="KaTeX error">${match}</span>`;
-		}
-	});
-
-	// Step 3: Process inline math $...$
-	// Avoid matching things like $5 or price $10 — require non-space after opening and before closing $
-	protectedHtml = protectedHtml.replace(/\$([^\s$](?:[^$]*?[^\s$])?)\$/g, (match, tex) => {
-		try {
-			return katex.renderToString(tex.trim(), {
-				displayMode: false,
-				throwOnError: false,
-				trust: true
-			});
-		} catch {
-			return `<span class="katex-error" title="KaTeX error">${match}</span>`;
-		}
-	});
-
-	// Step 4: Restore code blocks
-	protectedHtml = protectedHtml.replace(/\x00CODEBLOCK(\d+)\x00/g, (_, idx) => {
-		return codeBlocks[Number(idx)];
-	});
-
-	return protectedHtml;
 }
 
 /**
  * Apply typographic enhancements
  */
 function applyTypography(html) {
-	// Protect code blocks
-	const codeBlocks = [];
-	let result = html;
-
-	result = result.replace(/<pre[\s\S]*?<\/pre>/gi, (match) => {
-		const idx = codeBlocks.length;
-		codeBlocks.push(match);
-		return `\x00TB${idx}\x00`;
+	return withProtectedCode(html, 'TYPO', (text) => {
+		// Em dash: --- (but not in HTML comments or hr tags)
+		text = text.replace(/---/g, '\u2014');
+		// En dash: -- (but not in HTML comments)
+		text = text.replace(/--/g, '\u2013');
+		// Ellipsis
+		text = text.replace(/\.\.\./g, '\u2026');
+		return text;
 	});
-
-	result = result.replace(/<code[\s\S]*?<\/code>/gi, (match) => {
-		const idx = codeBlocks.length;
-		codeBlocks.push(match);
-		return `\x00TB${idx}\x00`;
-	});
-
-	// Em dash: --- (but not in HTML comments or hr tags)
-	result = result.replace(/---/g, '\u2014');
-	// En dash: -- (but not in HTML comments)
-	result = result.replace(/--/g, '\u2013');
-	// Ellipsis
-	result = result.replace(/\.\.\./g, '\u2026');
-
-	// Restore
-	result = result.replace(/\x00TB(\d+)\x00/g, (_, idx) => {
-		return codeBlocks[Number(idx)];
-	});
-
-	return result;
 }
 
 /**

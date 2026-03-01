@@ -5,7 +5,6 @@
 	import { tick } from 'svelte';
 
 	let paperEl;
-	let pageStyleEl;
 	let debounceTimer;
 
 	// Debounced rendering

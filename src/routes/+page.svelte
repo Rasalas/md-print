@@ -26,11 +26,7 @@
 	}
 
 	$effect(() => {
-		// Track all settings to trigger save on any change
-		appState.language;
-		appState.paperSize;
-		appState.theme;
-		appState.showToc;
+		const { language, paperSize, theme, showToc } = appState;
 		appState.saveSettings();
 	});
 </script>
@@ -69,6 +65,7 @@
 			<Editor />
 		</div>
 
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div
 			class="resize-handle"
 			role="separator"
