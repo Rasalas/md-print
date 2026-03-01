@@ -1,5 +1,43 @@
 <script>
 	import { appState } from './state.svelte.js';
+
+	let isGenerating = $state(false);
+
+	async function downloadPdf() {
+		isGenerating = true;
+		try {
+			const html2pdf = (await import('html2pdf.js')).default;
+			const paper = document.querySelector('.paper');
+			if (!paper) return;
+
+			const title = paper.querySelector('.doc-title')?.textContent || 'document';
+			const filename = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase();
+
+			const formats = {
+				A4: 'a4',
+				Letter: 'letter',
+				Legal: 'legal'
+			};
+
+			await html2pdf()
+				.set({
+					margin: [25, 20, 30, 20],
+					filename: `${filename}.pdf`,
+					image: { type: 'jpeg', quality: 0.98 },
+					html2canvas: { scale: 2, useCORS: true },
+					jsPDF: {
+						unit: 'mm',
+						format: formats[appState.paperSize] || 'a4',
+						orientation: 'portrait'
+					},
+					pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+				})
+				.from(paper)
+				.save();
+		} finally {
+			isGenerating = false;
+		}
+	}
 </script>
 
 <header class="app-header">
@@ -58,17 +96,30 @@
 		</button>
 
 		<button
+			class="pdf-btn"
+			title="Als PDF herunterladen"
+			onclick={downloadPdf}
+			disabled={isGenerating}
+		>
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+				<polyline points="7 10 12 15 17 10"></polyline>
+				<line x1="12" y1="15" x2="12" y2="3"></line>
+			</svg>
+			<span class="btn-label">{isGenerating ? 'PDF...' : 'PDF'}</span>
+		</button>
+
+		<button
 			class="print-btn"
 			title="Drucken (Ctrl+P)"
 			onclick={() => window.print()}
 		>
-			<!-- Printer icon -->
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<polyline points="6 9 6 2 18 2 18 9"></polyline>
 				<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
 				<rect x="6" y="14" width="12" height="8"></rect>
 			</svg>
-			<span class="print-label">Drucken</span>
+			<span class="btn-label">Drucken</span>
 		</button>
 	</div>
 </header>
@@ -189,15 +240,14 @@
 		background: var(--app-accent-dim);
 	}
 
+	.pdf-btn,
 	.print-btn {
 		display: flex;
 		align-items: center;
 		gap: 0.4em;
 		padding: 0.35em 0.9em;
-		background: var(--app-accent);
 		border: 1px solid transparent;
 		border-radius: 6px;
-		color: #16141a;
 		font-size: 0.8rem;
 		font-weight: 600;
 		font-family: var(--font-ui);
@@ -205,12 +255,34 @@
 		transition: all 0.2s;
 	}
 
-	.print-btn:hover {
-		background: var(--app-accent-hover);
-	}
-
+	.pdf-btn svg,
 	.print-btn svg {
 		flex-shrink: 0;
+	}
+
+	.pdf-btn {
+		background: var(--app-elevated);
+		border-color: var(--app-border);
+		color: var(--app-text);
+	}
+
+	.pdf-btn:hover {
+		border-color: var(--app-accent);
+		color: var(--app-accent);
+	}
+
+	.pdf-btn:disabled {
+		opacity: 0.6;
+		cursor: wait;
+	}
+
+	.print-btn {
+		background: var(--app-accent);
+		color: #16141a;
+	}
+
+	.print-btn:hover {
+		background: var(--app-accent-hover);
 	}
 
 	/* Responsive */
@@ -234,7 +306,7 @@
 			display: none;
 		}
 
-		.print-label {
+		.btn-label {
 			display: none;
 		}
 	}
