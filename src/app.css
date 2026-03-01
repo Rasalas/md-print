@@ -355,6 +355,34 @@ ul, ol {
 	color: var(--paper-text-muted);
 }
 
+/* --- Export mode (shared by print iframe + PDF source) ---- */
+.paper.export-paper {
+	box-shadow: none !important;
+	border-radius: 0 !important;
+}
+
+.paper.export-paper .page-gap {
+	height: 0 !important;
+	margin: 0 !important;
+	background: transparent !important;
+	page-break-before: always;
+	break-before: page;
+}
+
+.paper.export-paper .pagebreak {
+	border: none !important;
+	margin: 0 !important;
+	height: 0 !important;
+}
+
+.paper.export-paper .pagebreak::after {
+	display: none !important;
+}
+
+.paper.export-paper .pagebreak.paginated {
+	display: none !important;
+}
+
 /* --- Code: Inline ------------------------------------------ */
 .paper code {
 	font-family: var(--font-print-code);

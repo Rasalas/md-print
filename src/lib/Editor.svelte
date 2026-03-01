@@ -1,5 +1,6 @@
 <script>
 	import { appState } from './state.svelte.js';
+	import { printPreviewDocument } from './export.js';
 
 	let textarea;
 	let fileInput;
@@ -35,7 +36,7 @@
 		// Ctrl/Cmd+P: print
 		if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
 			e.preventDefault();
-			window.print();
+			printPreviewDocument();
 		}
 	}
 
