@@ -13,18 +13,9 @@
 
 	onMount(() => {
 		const saved = localStorage.getItem(STORAGE_KEY);
-		if (saved && saved.trim()) {
-			// Check if saved content is actually a sample (migration from older version)
-			const isSavedSample = ['de', 'en', 'fr', 'es', 'it'].some(
-				(lang) => saved.trim() === getSampleContent(lang).trim()
-			);
-			if (isSavedSample) {
-				localStorage.removeItem(STORAGE_KEY);
-				appState.content = getSampleContent(appState.language);
-			} else {
-				appState.content = saved;
-				isUserContent = true;
-			}
+		if (saved) {
+			appState.content = saved;
+			isUserContent = true;
 		} else {
 			appState.content = getSampleContent(appState.language);
 		}
