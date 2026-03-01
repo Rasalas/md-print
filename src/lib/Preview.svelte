@@ -1,10 +1,7 @@
 <script>
 	import { appState } from './state.svelte.js';
 	import { renderMarkdown } from './markdown.js';
-	import hljs from 'highlight.js';
-	import { tick } from 'svelte';
 
-	let paperEl;
 	let debounceTimer;
 
 	// Debounced rendering
@@ -20,20 +17,6 @@
 		}, 150);
 
 		return () => clearTimeout(debounceTimer);
-	});
-
-	// Apply highlight.js after HTML update
-	$effect(() => {
-		// Depend on renderedResult to re-run when it changes
-		const _ = renderedResult.html;
-		tick().then(() => {
-			if (paperEl) {
-				const blocks = paperEl.querySelectorAll('pre code:not(.hljs)');
-				blocks.forEach((block) => {
-					hljs.highlightElement(block);
-				});
-			}
-		});
 	});
 
 	// Dynamic page size
@@ -106,7 +89,6 @@
 
 	<div class="preview-scroll">
 		<div
-			bind:this={paperEl}
 			class="paper"
 			data-theme={appState.theme}
 			lang={appState.language}
@@ -132,25 +114,6 @@
 		height: 100%;
 		overflow: hidden;
 		background: var(--app-bg);
-	}
-
-	.panel-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.4em 0.8em;
-		background: var(--app-surface);
-		border-bottom: 1px solid var(--app-border);
-		flex-shrink: 0;
-		height: 36px;
-	}
-
-	.panel-title {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--app-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
 	}
 
 	.panel-info {

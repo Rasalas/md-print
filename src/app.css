@@ -19,8 +19,6 @@
 	/* Fonts */
 	--font-ui: 'Outfit', system-ui, -apple-system, sans-serif;
 	--font-editor: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-	--font-print-body: 'Spectral', 'Georgia', serif;
-	--font-print-heading: 'Spectral', 'Georgia', serif;
 	--font-print-code: 'Fira Code', 'JetBrains Mono', monospace;
 
 	/* Paper */
@@ -73,6 +71,26 @@ a {
 
 ul, ol {
 	list-style: none;
+}
+
+/* --- Shared Panel Header ----------------------------------- */
+.panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.4em 0.8em;
+	background: var(--app-surface);
+	border-bottom: 1px solid var(--app-border);
+	flex-shrink: 0;
+	height: 36px;
+}
+
+.panel-title {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--app-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
 }
 
 

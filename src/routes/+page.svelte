@@ -140,13 +140,7 @@
 		cursor: col-resize;
 	}
 
-	.editor-panel {
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
-	}
-
+	.editor-panel,
 	.preview-panel {
 		overflow: hidden;
 		display: flex;

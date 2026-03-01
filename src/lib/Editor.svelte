@@ -217,25 +217,6 @@
 		background: var(--app-bg);
 	}
 
-	.panel-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.4em 0.8em;
-		background: var(--app-surface);
-		border-bottom: 1px solid var(--app-border);
-		flex-shrink: 0;
-		height: 36px;
-	}
-
-	.panel-title {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--app-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-	}
-
 	.panel-actions {
 		display: flex;
 		gap: 0.3em;
