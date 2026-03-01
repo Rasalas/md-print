@@ -24,6 +24,15 @@
 	function onPointerUp() {
 		isDragging = false;
 	}
+
+	$effect(() => {
+		// Track all settings to trigger save on any change
+		appState.language;
+		appState.paperSize;
+		appState.theme;
+		appState.showToc;
+		appState.saveSettings();
+	});
 </script>
 
 <svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />
