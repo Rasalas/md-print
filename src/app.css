@@ -1,0 +1,709 @@
+/* ============================================================
+   md·print — Global Styles
+   The Typographer's Workshop (Atelier)
+   ============================================================ */
+
+/* --- CSS Variables ----------------------------------------- */
+:root {
+	/* Dark workshop palette */
+	--app-bg: #16141a;
+	--app-surface: #1e1c22;
+	--app-elevated: #28252e;
+	--app-border: #3a3740;
+	--app-text: #e8e2d6;
+	--app-text-muted: #8a8490;
+	--app-accent: #c9956b;
+	--app-accent-hover: #dba87e;
+	--app-accent-dim: rgba(201, 149, 107, 0.15);
+
+	/* Fonts */
+	--font-ui: 'Outfit', system-ui, -apple-system, sans-serif;
+	--font-editor: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+	--font-print-body: 'Spectral', 'Georgia', serif;
+	--font-print-heading: 'Spectral', 'Georgia', serif;
+	--font-print-code: 'Fira Code', 'JetBrains Mono', monospace;
+
+	/* Paper */
+	--paper-bg: #fefdfb;
+	--paper-text: #1a1a1a;
+	--paper-text-muted: #555;
+	--paper-border: #ddd;
+	--paper-code-bg: #f5f3ef;
+	--paper-blockquote-border: #c9956b;
+}
+
+/* --- CSS Reset --------------------------------------------- */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	-moz-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	font-family: var(--font-ui);
+	background: var(--app-bg);
+	color: var(--app-text);
+	line-height: 1.5;
+	min-height: 100dvh;
+	overflow: hidden;
+}
+
+img, svg {
+	display: block;
+	max-width: 100%;
+}
+
+button, input, select, textarea {
+	font: inherit;
+	color: inherit;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+ul, ol {
+	list-style: none;
+}
+
+
+/* ============================================================
+   PAPER TYPOGRAPHY
+   Used in both screen preview and print output.
+   All paper content lives inside .paper
+   ============================================================ */
+
+.paper {
+	background: var(--paper-bg);
+	color: var(--paper-text);
+	text-align: justify;
+	hyphens: auto;
+	-webkit-hyphens: auto;
+	-ms-hyphens: auto;
+	hyphenate-limit-chars: 6 3 2;
+	-webkit-hyphenate-limit-chars: 6 3 2;
+	orphans: 3;
+	widows: 3;
+	text-rendering: optimizeLegibility;
+	font-kerning: normal;
+	font-variant-ligatures: common-ligatures;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Frontmatter Header ------------------------------------ */
+.paper .frontmatter-header {
+	text-align: center;
+	margin-bottom: 2em;
+	padding-bottom: 1.5em;
+	border-bottom: 1px solid var(--paper-border);
+}
+
+.paper .frontmatter-header .doc-title {
+	font-size: 2em;
+	font-weight: 700;
+	line-height: 1.2;
+	margin-bottom: 0.3em;
+	letter-spacing: -0.01em;
+}
+
+.paper .frontmatter-header .doc-author {
+	font-size: 1.1em;
+	color: var(--paper-text-muted);
+	margin-bottom: 0.2em;
+	font-variant: small-caps;
+	letter-spacing: 0.05em;
+}
+
+.paper .frontmatter-header .doc-date {
+	font-size: 0.95em;
+	color: var(--paper-text-muted);
+}
+
+.paper .frontmatter-header .doc-abstract {
+	margin-top: 1.2em;
+	text-align: justify;
+	font-style: italic;
+	font-size: 0.95em;
+	line-height: 1.6;
+	max-width: 85%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* --- Table of Contents ------------------------------------- */
+.paper .toc {
+	margin-bottom: 2em;
+	padding: 1.2em 1.5em;
+	border: 1px solid var(--paper-border);
+	page-break-after: avoid;
+}
+
+.paper .toc-title {
+	font-weight: 700;
+	font-size: 1.1em;
+	margin-bottom: 0.6em;
+	text-align: left;
+	letter-spacing: 0.02em;
+}
+
+.paper .toc ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.paper .toc li {
+	margin: 0.2em 0;
+	text-align: left;
+}
+
+.paper .toc li.toc-h2 {
+	padding-left: 1em;
+}
+
+.paper .toc li.toc-h3 {
+	padding-left: 2em;
+	font-size: 0.95em;
+}
+
+.paper .toc a {
+	color: var(--paper-text);
+	text-decoration: none;
+	border-bottom: 1px dotted var(--paper-border);
+	transition: border-color 0.2s;
+}
+
+.paper .toc a:hover {
+	border-bottom-color: var(--paper-text);
+}
+
+/* --- Headings ---------------------------------------------- */
+.paper h1 {
+	font-size: 1.8em;
+	font-weight: 700;
+	line-height: 1.2;
+	margin-top: 0;
+	margin-bottom: 0.6em;
+	letter-spacing: -0.01em;
+}
+
+.paper h2 {
+	font-size: 1.4em;
+	font-weight: 700;
+	line-height: 1.25;
+	margin-top: 1.8em;
+	margin-bottom: 0.5em;
+}
+
+.paper h3 {
+	font-size: 1.15em;
+	font-weight: 600;
+	line-height: 1.3;
+	margin-top: 1.5em;
+	margin-bottom: 0.4em;
+}
+
+.paper h4 {
+	font-size: 1.05em;
+	font-weight: 600;
+	line-height: 1.35;
+	margin-top: 1.3em;
+	margin-bottom: 0.3em;
+}
+
+.paper h5,
+.paper h6 {
+	font-size: 1em;
+	font-weight: 600;
+	margin-top: 1.2em;
+	margin-bottom: 0.3em;
+}
+
+/* --- Paragraphs -------------------------------------------- */
+.paper p {
+	margin-bottom: 0.85em;
+}
+
+/* --- Links ------------------------------------------------- */
+.paper a {
+	color: #2c5aa0;
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+	transition: color 0.2s;
+}
+
+.paper a:hover {
+	color: #1a3d6e;
+}
+
+/* --- Lists ------------------------------------------------- */
+.paper ul,
+.paper ol {
+	margin-bottom: 0.85em;
+	padding-left: 1.8em;
+}
+
+.paper ul {
+	list-style-type: disc;
+}
+
+.paper ol {
+	list-style-type: decimal;
+}
+
+.paper li {
+	margin-bottom: 0.25em;
+	text-align: left;
+}
+
+.paper li > ul,
+.paper li > ol {
+	margin-top: 0.2em;
+	margin-bottom: 0.2em;
+}
+
+/* --- Blockquotes ------------------------------------------- */
+.paper blockquote {
+	margin: 1.2em 0;
+	padding: 0.6em 1.2em;
+	border-left: 3px solid var(--paper-blockquote-border);
+	background: rgba(201, 149, 107, 0.04);
+	font-style: italic;
+	color: var(--paper-text-muted);
+}
+
+.paper blockquote p:last-child {
+	margin-bottom: 0;
+}
+
+/* --- Horizontal Rule --------------------------------------- */
+.paper hr {
+	border: none;
+	border-top: 1px solid var(--paper-border);
+	margin: 2em 0;
+}
+
+/* --- Code: Inline ------------------------------------------ */
+.paper code {
+	font-family: var(--font-print-code);
+	font-size: 0.88em;
+	background: var(--paper-code-bg);
+	padding: 0.15em 0.4em;
+	border-radius: 3px;
+	word-break: break-word;
+}
+
+/* --- Code: Blocks ------------------------------------------ */
+.paper pre {
+	margin: 1.2em 0;
+	padding: 1em 1.2em;
+	background: var(--paper-code-bg);
+	border: 1px solid #e8e5e0;
+	border-radius: 4px;
+	overflow-x: auto;
+	font-size: 0.85em;
+	line-height: 1.55;
+	tab-size: 4;
+}
+
+.paper pre code {
+	background: none;
+	padding: 0;
+	border-radius: 0;
+	font-size: inherit;
+	word-break: normal;
+}
+
+/* --- Tables ------------------------------------------------ */
+.paper table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1.2em 0;
+	font-size: 0.92em;
+}
+
+.paper thead {
+	border-bottom: 2px solid var(--paper-text);
+}
+
+.paper th {
+	font-weight: 600;
+	text-align: left;
+	padding: 0.5em 0.8em;
+}
+
+.paper td {
+	padding: 0.45em 0.8em;
+	border-bottom: 1px solid var(--paper-border);
+}
+
+.paper tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.paper tbody tr:nth-child(even) {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+/* --- Images ------------------------------------------------ */
+.paper img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+	margin: 1.2em auto;
+}
+
+.paper figure {
+	margin: 1.5em 0;
+	text-align: center;
+}
+
+.paper figcaption {
+	font-size: 0.88em;
+	color: var(--paper-text-muted);
+	margin-top: 0.4em;
+	font-style: italic;
+}
+
+/* --- KaTeX / Math ------------------------------------------ */
+.paper .katex-display {
+	margin: 1.2em 0;
+	text-align: center;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.paper .katex-display > .katex {
+	text-align: center;
+}
+
+.paper .katex {
+	font-size: 1.05em;
+}
+
+/* --- Definition Lists -------------------------------------- */
+.paper dt {
+	font-weight: 600;
+	margin-top: 0.8em;
+}
+
+.paper dd {
+	margin-left: 1.5em;
+	margin-bottom: 0.4em;
+}
+
+/* --- Superscript / Subscript ------------------------------- */
+.paper sup,
+.paper sub {
+	font-size: 0.75em;
+	line-height: 0;
+	position: relative;
+	vertical-align: baseline;
+}
+
+.paper sup {
+	top: -0.5em;
+}
+
+.paper sub {
+	bottom: -0.25em;
+}
+
+
+/* ============================================================
+   PRINT THEMES via [data-theme] on .paper
+   ============================================================ */
+
+/* --- Klassisch (LaTeX-like) -------------------------------- */
+.paper[data-theme="klassisch"] {
+	font-family: 'Spectral', 'Georgia', serif;
+	font-size: 11.5pt;
+	line-height: 1.5;
+}
+
+.paper[data-theme="klassisch"] h1,
+.paper[data-theme="klassisch"] h2,
+.paper[data-theme="klassisch"] h3,
+.paper[data-theme="klassisch"] h4,
+.paper[data-theme="klassisch"] h5,
+.paper[data-theme="klassisch"] h6 {
+	font-family: 'Spectral', 'Georgia', serif;
+}
+
+/* LaTeX-style paragraph indentation: no spacing, indent on continuation */
+.paper[data-theme="klassisch"] p {
+	margin-bottom: 0;
+}
+
+.paper[data-theme="klassisch"] p + p {
+	text-indent: 1.5em;
+}
+
+/* No indent after headings, lists, blockquotes, figures, tables, hr */
+.paper[data-theme="klassisch"] h1 + p,
+.paper[data-theme="klassisch"] h2 + p,
+.paper[data-theme="klassisch"] h3 + p,
+.paper[data-theme="klassisch"] h4 + p,
+.paper[data-theme="klassisch"] h5 + p,
+.paper[data-theme="klassisch"] h6 + p,
+.paper[data-theme="klassisch"] ul + p,
+.paper[data-theme="klassisch"] ol + p,
+.paper[data-theme="klassisch"] blockquote + p,
+.paper[data-theme="klassisch"] pre + p,
+.paper[data-theme="klassisch"] figure + p,
+.paper[data-theme="klassisch"] table + p,
+.paper[data-theme="klassisch"] hr + p,
+.paper[data-theme="klassisch"] .katex-display + p,
+.paper[data-theme="klassisch"] .frontmatter-header + p,
+.paper[data-theme="klassisch"] .toc + p {
+	text-indent: 0;
+}
+
+.paper[data-theme="klassisch"] .frontmatter-header .doc-title {
+	font-family: 'Spectral', 'Georgia', serif;
+}
+
+/* --- Modern ------------------------------------------------ */
+.paper[data-theme="modern"] {
+	font-family: 'Source Serif 4', 'Georgia', serif;
+	font-size: 11pt;
+	line-height: 1.65;
+}
+
+.paper[data-theme="modern"] h1,
+.paper[data-theme="modern"] h2,
+.paper[data-theme="modern"] h3,
+.paper[data-theme="modern"] h4,
+.paper[data-theme="modern"] h5,
+.paper[data-theme="modern"] h6 {
+	font-family: 'Outfit', system-ui, sans-serif;
+	letter-spacing: -0.02em;
+}
+
+.paper[data-theme="modern"] p {
+	margin-bottom: 0.9em;
+}
+
+.paper[data-theme="modern"] .frontmatter-header .doc-title {
+	font-family: 'Outfit', system-ui, sans-serif;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+}
+
+.paper[data-theme="modern"] .frontmatter-header .doc-author {
+	font-variant: normal;
+	letter-spacing: 0.02em;
+	font-family: 'Outfit', system-ui, sans-serif;
+	font-weight: 300;
+}
+
+/* --- Editorial --------------------------------------------- */
+.paper[data-theme="editorial"] {
+	font-family: 'Spectral', 'Georgia', serif;
+	font-size: 11pt;
+	line-height: 1.6;
+}
+
+.paper[data-theme="editorial"] h1,
+.paper[data-theme="editorial"] h2,
+.paper[data-theme="editorial"] h3,
+.paper[data-theme="editorial"] h4,
+.paper[data-theme="editorial"] h5,
+.paper[data-theme="editorial"] h6 {
+	font-family: 'Fraunces', 'Georgia', serif;
+	font-weight: 800;
+	font-style: normal;
+}
+
+.paper[data-theme="editorial"] h1 {
+	font-size: 2em;
+}
+
+.paper[data-theme="editorial"] h2 {
+	padding-bottom: 0.3em;
+	border-bottom: 2px solid var(--paper-text);
+}
+
+.paper[data-theme="editorial"] p {
+	margin-bottom: 0.9em;
+}
+
+.paper[data-theme="editorial"] .frontmatter-header .doc-title {
+	font-family: 'Fraunces', 'Georgia', serif;
+	font-weight: 800;
+}
+
+.paper[data-theme="editorial"] .frontmatter-header {
+	border-bottom: 2px solid var(--paper-text);
+}
+
+.paper[data-theme="editorial"] blockquote {
+	border-left-width: 4px;
+	border-left-color: var(--paper-text);
+}
+
+
+/* ============================================================
+   PRINT MEDIA QUERIES
+   ============================================================ */
+
+@media print {
+	/* Hide all app UI */
+	.app-header,
+	.editor-panel,
+	.resize-handle,
+	.mobile-tabs,
+	.panel-header,
+	.preview-panel-header {
+		display: none !important;
+	}
+
+	body {
+		background: white;
+		overflow: visible;
+	}
+
+	.app-layout {
+		display: block !important;
+		height: auto !important;
+		overflow: visible !important;
+	}
+
+	.preview-panel {
+		display: block !important;
+		overflow: visible !important;
+		height: auto !important;
+		background: white !important;
+		padding: 0 !important;
+	}
+
+	.preview-scroll {
+		overflow: visible !important;
+		height: auto !important;
+		padding: 0 !important;
+	}
+
+	/* Paper fills full page */
+	.paper {
+		width: 100% !important;
+		max-width: none !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		box-shadow: none !important;
+		border: none !important;
+		border-radius: 0 !important;
+	}
+
+	/* Default page margins — overridden dynamically via <style id="page-style"> */
+	@page {
+		margin: 25mm 20mm 30mm 20mm;
+	}
+
+	/* Heading pagination control */
+	h1, h2, h3, h4, h5, h6 {
+		break-after: avoid;
+		page-break-after: avoid;
+	}
+
+	h1 + *, h2 + *, h3 + * {
+		break-before: avoid;
+		page-break-before: avoid;
+	}
+
+	/* Keep blocks together */
+	figure, table, pre, blockquote, .katex-display {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+
+	/* Print links with href */
+	.paper a[href^="http"]::after {
+		content: " (" attr(href) ")";
+		font-size: 0.8em;
+		color: #666;
+		font-style: normal;
+		word-break: break-all;
+	}
+
+	/* Wrap code in print */
+	pre {
+		white-space: pre-wrap;
+		word-wrap: break-word;
+	}
+
+	img {
+		max-width: 100% !important;
+	}
+
+	/* Avoid blank pages */
+	.paper .toc {
+		page-break-after: avoid;
+	}
+}
+
+
+/* ============================================================
+   HIGHLIGHT.JS OVERRIDES (for paper code blocks)
+   A subtle, warm syntax theme
+   ============================================================ */
+
+.paper .hljs {
+	background: transparent;
+	color: #383a42;
+}
+
+.paper .hljs-comment,
+.paper .hljs-quote {
+	color: #8e908c;
+	font-style: italic;
+}
+
+.paper .hljs-keyword,
+.paper .hljs-selector-tag,
+.paper .hljs-built_in {
+	color: #a626a4;
+}
+
+.paper .hljs-string,
+.paper .hljs-attr {
+	color: #50a14f;
+}
+
+.paper .hljs-number,
+.paper .hljs-literal {
+	color: #986801;
+}
+
+.paper .hljs-function .hljs-title,
+.paper .hljs-title.function_ {
+	color: #4078f2;
+}
+
+.paper .hljs-type,
+.paper .hljs-title.class_ {
+	color: #c18401;
+}
+
+.paper .hljs-variable,
+.paper .hljs-template-variable {
+	color: #e45649;
+}
+
+.paper .hljs-meta {
+	color: #4078f2;
+}
+
+.paper .hljs-params {
+	color: #383a42;
+}
