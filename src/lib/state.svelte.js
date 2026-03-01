@@ -1,4 +1,5 @@
 const SETTINGS_KEY = 'md-print-settings';
+const SUPPORTED_LANGS = ['de', 'en', 'fr', 'es', 'it'];
 
 function loadSettings() {
 	try {
@@ -9,11 +10,17 @@ function loadSettings() {
 	}
 }
 
+function detectLanguage() {
+	if (typeof navigator === 'undefined') return 'de';
+	const browserLang = (navigator.language || navigator.languages?.[0] || 'de').slice(0, 2).toLowerCase();
+	return SUPPORTED_LANGS.includes(browserLang) ? browserLang : 'en';
+}
+
 const saved = typeof localStorage !== 'undefined' ? loadSettings() : {};
 
 class AppState {
 	content = $state('');
-	language = $state(saved.language ?? 'de');
+	language = $state(saved.language ?? detectLanguage());
 	paperSize = $state(saved.paperSize ?? 'A4');
 	theme = $state(saved.theme ?? 'klassisch');
 	showToc = $state(saved.showToc ?? false);

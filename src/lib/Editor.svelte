@@ -1,22 +1,23 @@
 <script>
 	import { appState } from './state.svelte.js';
-	import { SAMPLE_CONTENT } from './sample.js';
+	import { getSampleContent } from './sample.js';
 	import { onMount } from 'svelte';
 
 	let textarea;
 	let fileInput;
 	let showDropOverlay = $state(false);
 	let dragCounter = $state(0);
+	let isUserContent = $state(false);
 
 	const STORAGE_KEY = 'md-print-content';
 
 	onMount(() => {
-		// Load from localStorage or use sample
 		const saved = localStorage.getItem(STORAGE_KEY);
 		if (saved && saved.trim()) {
 			appState.content = saved;
+			isUserContent = true;
 		} else {
-			appState.content = SAMPLE_CONTENT;
+			appState.content = getSampleContent(appState.language);
 		}
 	});
 
@@ -24,6 +25,14 @@
 	$effect(() => {
 		if (appState.content !== undefined && appState.content !== '') {
 			localStorage.setItem(STORAGE_KEY, appState.content);
+		}
+	});
+
+	// Swap sample content when language changes (only if still showing a sample)
+	$effect(() => {
+		const lang = appState.language;
+		if (!isUserContent) {
+			appState.content = getSampleContent(lang);
 		}
 	});
 
@@ -99,6 +108,7 @@
 		const reader = new FileReader();
 		reader.onload = (e) => {
 			appState.content = e.target.result;
+			isUserContent = true;
 		};
 		reader.readAsText(file);
 	}
@@ -106,6 +116,7 @@
 	function clearEditor() {
 		if (confirm('Inhalt löschen?')) {
 			appState.content = '';
+			isUserContent = false;
 			localStorage.removeItem(STORAGE_KEY);
 		}
 	}
@@ -170,6 +181,7 @@
 		bind:this={textarea}
 		bind:value={appState.content}
 		onkeydown={handleKeydown}
+		oninput={() => { isUserContent = true; }}
 		class="editor-textarea"
 		placeholder="Schreiben Sie Ihr Markdown hier..."
 		spellcheck="true"
