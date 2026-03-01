@@ -1,9 +1,11 @@
 <script>
+	import { tick } from 'svelte';
 	import { appState } from './state.svelte.js';
 	import { renderMarkdown } from './markdown.js';
 	import { PAPER_SIZES, PAGE_MARGINS, TOC_LABELS } from './config.js';
 
 	let debounceTimer;
+	let paperRef;
 
 	// Debounced rendering
 	let renderedResult = $state({ html: '', frontmatter: {}, headings: [] });
@@ -31,7 +33,7 @@
 		return style;
 	});
 
-	let paperStyle = $derived(`width: ${paper.width};`);
+	let paperStyle = $derived(`width: ${paper.width}; min-height: ${paper.page.split(' ')[1]};`);
 
 	// TOC HTML
 	let tocHtml = $derived.by(() => {
@@ -60,6 +62,108 @@
 		html += '</header>';
 		return html;
 	});
+
+	// --- Pagination ---
+	$effect(() => {
+		// Track reactive dependencies
+		renderedResult.html;
+		appState.paperSize;
+		appState.theme;
+		appState.showToc;
+
+		tick().then(() => {
+			if (paperRef) paginatePreview(paperRef);
+		});
+	});
+
+	function paginatePreview(el) {
+		// Skip on mobile widths
+		if (el.offsetWidth < 400) return;
+
+		// 1. Remove existing gaps and paginated classes (idempotent)
+		for (const gap of el.querySelectorAll('.page-gap')) gap.remove();
+		for (const pb of el.querySelectorAll('.paginated')) pb.classList.remove('paginated');
+
+		// 2. Measure content height per page via probe
+		const pageH = PAPER_SIZES[appState.paperSize]?.page.split(' ')[1] || '297mm';
+		const [mTop, , mBottom] = PAGE_MARGINS;
+
+		const probe = document.createElement('div');
+		probe.style.cssText = `height: calc(${pageH} - ${mTop}mm - ${mBottom}mm); position: absolute; visibility: hidden;`;
+		el.appendChild(probe);
+		const slotHeight = probe.offsetHeight;
+		probe.remove();
+
+		if (slotHeight <= 0) return;
+
+		// Minimum content height after a heading before it counts as
+		// "anchored" — roughly 5–6 lines of body text.
+		// Below this threshold the heading gets pulled to the next page.
+		const minAfterHeading = slotHeight * 0.20;
+
+		// 3. Walk top-level children, accumulate height
+		const children = Array.from(el.children);
+		let used = 0;
+		let pageNum = 1;
+		let lastHeading = null;       // most recent heading element
+		let usedBeforeLastHeading = 0; // `used` just before that heading
+		let contentAfterHeading = 0;   // height accumulated after the heading
+
+		for (const child of children) {
+			const h = child.offsetHeight;
+
+			// Manual pagebreak
+			if (child.classList.contains('pagebreak')) {
+				child.classList.add('paginated');
+				el.insertBefore(createPageGap(pageNum), child);
+				used = 0;
+				pageNum++;
+				lastHeading = null;
+				continue;
+			}
+
+			// Would this element overflow the current page?
+			if (used > 0 && used + h > slotHeight) {
+				// Heading protection (like LaTeX \needspace):
+				// If a recent heading hasn't been followed by enough
+				// content, pull it (and everything after it) to the
+				// next page so it doesn't sit stranded at the bottom.
+				if (lastHeading && contentAfterHeading < minAfterHeading) {
+					el.insertBefore(createPageGap(pageNum), lastHeading);
+					pageNum++;
+					used = (used - usedBeforeLastHeading) + h;
+				} else {
+					el.insertBefore(createPageGap(pageNum), child);
+					pageNum++;
+					used = h;
+				}
+				lastHeading = null;
+			} else {
+				used += h;
+			}
+
+			// Track headings (h1-h6) for widow protection
+			const tag = child.tagName;
+			if (tag && /^H[1-6]$/.test(tag)) {
+				lastHeading = child;
+				usedBeforeLastHeading = used - h;
+				contentAfterHeading = 0;
+			} else if (lastHeading) {
+				contentAfterHeading += h;
+				// Once enough content follows, the heading is "anchored"
+				if (contentAfterHeading >= minAfterHeading) {
+					lastHeading = null;
+				}
+			}
+		}
+	}
+
+	function createPageGap(pageNumber) {
+		const gap = document.createElement('div');
+		gap.className = 'page-gap';
+		gap.setAttribute('data-page', pageNumber);
+		return gap;
+	}
 </script>
 
 <svelte:head>
@@ -74,6 +178,7 @@
 
 	<div class="preview-scroll">
 		<div
+			bind:this={paperRef}
 			class="paper"
 			data-theme={appState.theme}
 			lang={appState.language}

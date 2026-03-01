@@ -333,6 +333,18 @@ ul, ol {
 	font-style: italic;
 }
 
+/* --- Paginated Page Break (replaced by .page-gap) ---------- */
+.paper .pagebreak.paginated {
+	display: none;
+}
+
+/* --- Page Gap (visual page separator) ---------------------- */
+.paper .page-gap {
+	margin: 30mm -20mm 25mm;
+	height: 2em;
+	background: #1a181e;
+}
+
 /* --- Code: Inline ------------------------------------------ */
 .paper code {
 	font-family: var(--font-print-code);
@@ -506,7 +518,8 @@ ul, ol {
 .paper[data-theme="klassisch"] .katex-display + p,
 .paper[data-theme="klassisch"] .frontmatter-header + p,
 .paper[data-theme="klassisch"] .toc + p,
-.paper[data-theme="klassisch"] .pagebreak + p {
+.paper[data-theme="klassisch"] .pagebreak + p,
+.paper[data-theme="klassisch"] .page-gap + p {
 	text-indent: 0;
 }
 
@@ -701,6 +714,16 @@ ul, ol {
 
 	img {
 		max-width: 100% !important;
+	}
+
+	/* Hide page gaps in print */
+	.paper .page-gap {
+		display: none !important;
+	}
+
+	/* Show pagebreaks in print even if paginated in screen */
+	.paper .pagebreak.paginated {
+		display: block !important;
 	}
 
 	/* Page break */
