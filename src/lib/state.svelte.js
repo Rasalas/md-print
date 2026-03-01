@@ -36,6 +36,7 @@ class AppState {
 	paperSize = $state(saved.paperSize ?? 'A4');
 	theme = $state(saved.theme ?? 'klassisch');
 	showToc = $state(saved.showToc ?? false);
+	showPageNumbers = $state(saved.showPageNumbers ?? true);
 	activeTab = $state('editor');
 	isUserContent = $state(!!savedContent);
 
@@ -45,7 +46,8 @@ class AppState {
 				language: this.language,
 				paperSize: this.paperSize,
 				theme: this.theme,
-				showToc: this.showToc
+				showToc: this.showToc,
+				showPageNumbers: this.showPageNumbers
 			}));
 		} catch { /* quota exceeded */ }
 	}

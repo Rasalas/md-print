@@ -1,6 +1,7 @@
 import { Marked } from 'marked';
 import katex from 'katex';
 import hljs from 'highlight.js';
+import { PAGEBREAK_TOKEN } from './config.js';
 
 /**
  * Parse simple YAML-like frontmatter (key: value pairs between --- delimiters)
@@ -112,6 +113,18 @@ function applyTypography(html) {
 	});
 }
 
+/**
+ * Replace \newpage paragraphs with pagebreak divs.
+ * Protected so \newpage inside code blocks is not transformed.
+ */
+function processPageBreaks(html) {
+	const escaped = PAGEBREAK_TOKEN.replace(/\\/g, '\\\\');
+	const pattern = new RegExp(`<p>${escaped}</p>`, 'g');
+	return withProtectedCode(html, 'PGBRK', (text) => {
+		return text.replace(pattern, '<div class="pagebreak"></div>');
+	});
+}
+
 // Shared Marked instance — config is static, only the heading collector changes per call
 const marked = new Marked();
 
@@ -148,6 +161,7 @@ export function renderMarkdown(markdownText) {
 	});
 
 	let html = marked.parse(body);
+	html = processPageBreaks(html);
 	html = processKaTeX(html);
 	html = applyTypography(html);
 

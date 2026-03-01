@@ -17,7 +17,7 @@
 			const filename = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase();
 			const format = (PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4).pdf;
 
-			await html2pdf()
+			let worker = html2pdf()
 				.set({
 					margin: PAGE_MARGINS,
 					filename: `${filename}.pdf`,
@@ -27,7 +27,26 @@
 					pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
 				})
 				.from(paper)
-				.save();
+				.toPdf();
+
+			if (appState.showPageNumbers) {
+				worker = worker.get('pdf').then((pdf) => {
+					const total = pdf.internal.getNumberOfPages();
+					for (let i = 1; i <= total; i++) {
+						pdf.setPage(i);
+						pdf.setFontSize(10);
+						pdf.setTextColor(85, 85, 85);
+						pdf.text(
+							String(i),
+							pdf.internal.pageSize.getWidth() / 2,
+							pdf.internal.pageSize.getHeight() - 15,
+							{ align: 'center' }
+						);
+					}
+				});
+			}
+
+			await worker.save();
 		} finally {
 			isGenerating = false;
 		}
@@ -67,6 +86,20 @@
 					<line x1="3" y1="6" x2="3.01" y2="6"></line>
 					<line x1="3" y1="12" x2="3.01" y2="12"></line>
 					<line x1="3" y1="18" x2="3.01" y2="18"></line>
+				</svg>
+			</button>
+
+			<button
+				class="icon-btn"
+				class:active={appState.showPageNumbers}
+				title="Seitenzahlen"
+				onclick={() => (appState.showPageNumbers = !appState.showPageNumbers)}
+			>
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="4" y1="9" x2="20" y2="9"></line>
+					<line x1="4" y1="15" x2="20" y2="15"></line>
+					<line x1="10" y1="3" x2="8" y2="21"></line>
+					<line x1="16" y1="3" x2="14" y2="21"></line>
 				</svg>
 			</button>
 

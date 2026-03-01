@@ -1,5 +1,7 @@
 export const SUPPORTED_LANGS = ['de', 'en', 'fr', 'es', 'it'];
 
+export const PAGEBREAK_TOKEN = '\\newpage';
+
 // Margins: [top, right, bottom, left] in mm
 export const PAGE_MARGINS = [25, 20, 30, 20];
 

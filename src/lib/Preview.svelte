@@ -21,7 +21,15 @@
 
 	let paper = $derived(PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4);
 
-	let pageStyle = $derived(`@page { size: ${paper.page}; margin: ${PAGE_MARGINS.map(v => v + 'mm').join(' ')}; }`);
+	let pageStyle = $derived.by(() => {
+		const margin = PAGE_MARGINS.map(v => v + 'mm').join(' ');
+		let style = `@page { size: ${paper.page}; margin: ${margin};`;
+		if (appState.showPageNumbers) {
+			style += ` @bottom-center { content: counter(page); font-size: 10pt; color: #555; }`;
+		}
+		style += ` }`;
+		return style;
+	});
 
 	let paperStyle = $derived(`width: ${paper.width};`);
 

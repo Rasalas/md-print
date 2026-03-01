@@ -312,6 +312,27 @@ ul, ol {
 	margin: 2em 0;
 }
 
+/* --- Page Break -------------------------------------------- */
+.paper .pagebreak {
+	border-top: 2px dashed var(--paper-border);
+	margin: 2em 0;
+	height: 0;
+	position: relative;
+}
+
+.paper .pagebreak::after {
+	content: 'Page Break';
+	position: absolute;
+	top: -0.65em;
+	left: 50%;
+	transform: translateX(-50%);
+	background: var(--paper-bg);
+	padding: 0 0.6em;
+	font-size: 0.75em;
+	color: var(--paper-text-muted);
+	font-style: italic;
+}
+
 /* --- Code: Inline ------------------------------------------ */
 .paper code {
 	font-family: var(--font-print-code);
@@ -484,7 +505,8 @@ ul, ol {
 .paper[data-theme="klassisch"] hr + p,
 .paper[data-theme="klassisch"] .katex-display + p,
 .paper[data-theme="klassisch"] .frontmatter-header + p,
-.paper[data-theme="klassisch"] .toc + p {
+.paper[data-theme="klassisch"] .toc + p,
+.paper[data-theme="klassisch"] .pagebreak + p {
 	text-indent: 0;
 }
 
@@ -679,6 +701,19 @@ ul, ol {
 
 	img {
 		max-width: 100% !important;
+	}
+
+	/* Page break */
+	.paper .pagebreak {
+		border: none;
+		margin: 0;
+		height: 0;
+		page-break-before: always;
+		break-before: page;
+	}
+
+	.paper .pagebreak::after {
+		display: none;
 	}
 
 	/* Avoid blank pages */

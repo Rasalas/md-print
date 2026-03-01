@@ -27,7 +27,7 @@
 
 	// Persist settings on change
 	$effect(() => {
-		const { language, paperSize, theme, showToc } = appState;
+		const { language, paperSize, theme, showToc, showPageNumbers } = appState;
 		appState.saveSettings();
 	});
 
