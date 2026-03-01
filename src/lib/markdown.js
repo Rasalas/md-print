@@ -112,53 +112,43 @@ function applyTypography(html) {
 	});
 }
 
+// Shared Marked instance — config is static, only the heading collector changes per call
+const marked = new Marked();
+
 /**
  * Main render function.
  * Returns { html, frontmatter, headings }
  */
-export function renderMarkdown(markdownText, language = 'de') {
+export function renderMarkdown(markdownText) {
 	if (!markdownText || !markdownText.trim()) {
 		return { html: '', frontmatter: {}, headings: [] };
 	}
 
-	// Parse frontmatter
 	const { frontmatter, body } = parseFrontmatter(markdownText);
-
-	// Collect headings
 	const headings = [];
 
-	// Configure marked
-	const marked = new Marked();
-
-	const renderer = {
-		heading({ text, depth }) {
-			const id = slugify(text);
-			headings.push({ level: depth, id, text });
-			return `<h${depth} id="${id}">${text}</h${depth}>`;
-		},
-		code({ text, lang }) {
-			const language = lang && hljs.getLanguage(lang) ? lang : null;
-			const highlighted = language
-				? hljs.highlight(text, { language }).value
-				: hljs.highlightAuto(text).value;
-			const langClass = language ? `hljs language-${language}` : 'hljs';
-			return `<pre><code class="${langClass}">${highlighted}</code></pre>`;
-		}
-	};
-
 	marked.use({
-		renderer,
+		renderer: {
+			heading({ text, depth }) {
+				const id = slugify(text);
+				headings.push({ level: depth, id, text });
+				return `<h${depth} id="${id}">${text}</h${depth}>`;
+			},
+			code({ text, lang }) {
+				const resolved = lang && hljs.getLanguage(lang) ? lang : null;
+				const highlighted = resolved
+					? hljs.highlight(text, { language: resolved }).value
+					: hljs.highlightAuto(text).value;
+				const langClass = resolved ? `hljs language-${resolved}` : 'hljs';
+				return `<pre><code class="${langClass}">${highlighted}</code></pre>`;
+			}
+		},
 		gfm: true,
 		breaks: false
 	});
 
-	// Render markdown to HTML
 	let html = marked.parse(body);
-
-	// Process KaTeX math
 	html = processKaTeX(html);
-
-	// Apply typographic enhancements
 	html = applyTypography(html);
 
 	return { html, frontmatter, headings };

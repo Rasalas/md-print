@@ -1,6 +1,7 @@
 <script>
 	import { appState } from './state.svelte.js';
 	import { renderMarkdown } from './markdown.js';
+	import { PAPER_SIZES, TOC_LABELS } from './config.js';
 
 	let debounceTimer;
 
@@ -9,51 +10,27 @@
 
 	$effect(() => {
 		const content = appState.content;
-		const language = appState.language;
 
 		clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
-			renderedResult = renderMarkdown(content, language);
+			renderedResult = renderMarkdown(content);
 		}, 150);
 
 		return () => clearTimeout(debounceTimer);
 	});
 
-	// Dynamic page size
-	let pageStyle = $derived.by(() => {
-		const sizes = {
-			A4: '210mm 297mm',
-			Letter: '8.5in 11in',
-			Legal: '8.5in 14in'
-		};
-		const size = sizes[appState.paperSize] || sizes.A4;
-		return `@page { size: ${size}; margin: 25mm 20mm 30mm 20mm; }`;
-	});
+	let paper = $derived(PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4);
 
-	// Paper preview dimensions (for screen, approximation of aspect ratio)
-	let paperStyle = $derived.by(() => {
-		const widths = {
-			A4: '210mm',
-			Letter: '8.5in',
-			Legal: '8.5in'
-		};
-		return `width: ${widths[appState.paperSize] || widths.A4};`;
-	});
+	let pageStyle = $derived(`@page { size: ${paper.page}; margin: 25mm 20mm 30mm 20mm; }`);
+
+	let paperStyle = $derived(`width: ${paper.width};`);
 
 	// TOC HTML
 	let tocHtml = $derived.by(() => {
 		if (!appState.showToc || renderedResult.headings.length === 0) return '';
 
-		const tocLabel = {
-			de: 'Inhaltsverzeichnis',
-			en: 'Table of Contents',
-			fr: 'Table des matieres',
-			es: 'Tabla de contenido',
-			it: 'Indice'
-		};
-
 		let html = '<nav class="toc">';
-		html += `<div class="toc-title">${tocLabel[appState.language] || tocLabel.de}</div>`;
+		html += `<div class="toc-title">${TOC_LABELS[appState.language] || TOC_LABELS.de}</div>`;
 		html += '<ul>';
 		for (const h of renderedResult.headings) {
 			html += `<li class="toc-h${h.level}"><a href="#${h.id}">${h.text}</a></li>`;
@@ -160,35 +137,4 @@
 		}
 	}
 
-	@media print {
-		.preview-container {
-			display: block !important;
-			height: auto !important;
-			overflow: visible !important;
-			background: white !important;
-		}
-
-		.preview-panel-header,
-		.panel-header {
-			display: none !important;
-		}
-
-		.preview-scroll {
-			display: block !important;
-			padding: 0 !important;
-			overflow: visible !important;
-			height: auto !important;
-			background: white !important;
-		}
-
-		.paper {
-			width: 100% !important;
-			max-width: none !important;
-			margin: 0 !important;
-			padding: 0 !important;
-			box-shadow: none !important;
-			border: none !important;
-			border-radius: 0 !important;
-		}
-	}
 </style>

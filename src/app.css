@@ -580,6 +580,7 @@ ul, ol {
 	/* Hide all app UI */
 	.app-header,
 	.editor-panel,
+	.editor-container,
 	.resize-handle,
 	.mobile-tabs,
 	.panel-header,
@@ -589,6 +590,12 @@ ul, ol {
 
 	body {
 		background: white;
+		overflow: visible;
+	}
+
+	/* Flatten layout */
+	.app-shell {
+		height: auto;
 		overflow: visible;
 	}
 
@@ -602,14 +609,24 @@ ul, ol {
 		display: block !important;
 		overflow: visible !important;
 		height: auto !important;
+		width: 100% !important;
 		background: white !important;
 		padding: 0 !important;
 	}
 
+	.preview-container {
+		display: block !important;
+		height: auto !important;
+		overflow: visible !important;
+		background: white !important;
+	}
+
 	.preview-scroll {
+		display: block !important;
 		overflow: visible !important;
 		height: auto !important;
 		padding: 0 !important;
+		background: white !important;
 	}
 
 	/* Paper fills full page */

@@ -10,7 +10,7 @@
 	}
 
 	function handleKey(e) {
-		if (e.key === 'Escape') close();
+		if (open && e.key === 'Escape') close();
 	}
 </script>
 

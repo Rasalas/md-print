@@ -1,9 +1,20 @@
+import { SUPPORTED_LANGS } from './config.js';
+import { getSampleContent } from './sample.js';
+
 const SETTINGS_KEY = 'md-print-settings';
-const SUPPORTED_LANGS = ['de', 'en', 'fr', 'es', 'it'];
+const CONTENT_KEY = 'md-print-content';
+
+function loadFromStorage(key) {
+	try {
+		return localStorage.getItem(key);
+	} catch {
+		return null;
+	}
+}
 
 function loadSettings() {
 	try {
-		const raw = localStorage.getItem(SETTINGS_KEY);
+		const raw = loadFromStorage(SETTINGS_KEY);
 		return raw ? JSON.parse(raw) : {};
 	} catch {
 		return {};
@@ -17,14 +28,16 @@ function detectLanguage() {
 }
 
 const saved = typeof localStorage !== 'undefined' ? loadSettings() : {};
+const savedContent = typeof localStorage !== 'undefined' ? loadFromStorage(CONTENT_KEY) : null;
 
 class AppState {
-	content = $state('');
+	content = $state(savedContent || '');
 	language = $state(saved.language ?? detectLanguage());
 	paperSize = $state(saved.paperSize ?? 'A4');
 	theme = $state(saved.theme ?? 'klassisch');
 	showToc = $state(saved.showToc ?? false);
 	activeTab = $state('editor');
+	isUserContent = $state(!!savedContent);
 
 	saveSettings() {
 		try {
@@ -34,8 +47,35 @@ class AppState {
 				theme: this.theme,
 				showToc: this.showToc
 			}));
-		} catch { /* quota exceeded etc. */ }
+		} catch { /* quota exceeded */ }
+	}
+
+	saveContent() {
+		if (this.isUserContent && this.content) {
+			try {
+				localStorage.setItem(CONTENT_KEY, this.content);
+			} catch { /* quota exceeded */ }
+		}
+	}
+
+	clearContent() {
+		this.content = '';
+		this.isUserContent = false;
+		try {
+			localStorage.removeItem(CONTENT_KEY);
+		} catch { /* ignore */ }
+	}
+
+	loadSampleIfNeeded() {
+		if (!this.isUserContent) {
+			this.content = getSampleContent(this.language);
+		}
 	}
 }
 
 export const appState = new AppState();
+
+// Load sample content if no saved user content
+if (!savedContent) {
+	appState.content = getSampleContent(appState.language);
+}

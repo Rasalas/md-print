@@ -1,5 +1,6 @@
 <script>
 	import { appState } from './state.svelte.js';
+	import { PAPER_SIZES } from './config.js';
 	import AboutModal from './AboutModal.svelte';
 
 	let isGenerating = $state(false);
@@ -14,12 +15,7 @@
 
 			const title = paper.querySelector('.doc-title')?.textContent || 'document';
 			const filename = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase();
-
-			const formats = {
-				A4: 'a4',
-				Letter: 'letter',
-				Legal: 'legal'
-			};
+			const format = (PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4).pdf;
 
 			await html2pdf()
 				.set({
@@ -27,11 +23,7 @@
 					filename: `${filename}.pdf`,
 					image: { type: 'jpeg', quality: 0.98 },
 					html2canvas: { scale: 2, useCORS: true },
-					jsPDF: {
-						unit: 'mm',
-						format: formats[appState.paperSize] || 'a4',
-						orientation: 'portrait'
-					},
+					jsPDF: { unit: 'mm', format, orientation: 'portrait' },
 					pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
 				})
 				.from(paper)
@@ -334,9 +326,4 @@
 		}
 	}
 
-	@media print {
-		.app-header {
-			display: none !important;
-		}
-	}
 </style>
