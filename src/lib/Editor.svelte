@@ -14,16 +14,25 @@
 	onMount(() => {
 		const saved = localStorage.getItem(STORAGE_KEY);
 		if (saved && saved.trim()) {
-			appState.content = saved;
-			isUserContent = true;
+			// Check if saved content is actually a sample (migration from older version)
+			const isSavedSample = ['de', 'en', 'fr', 'es', 'it'].some(
+				(lang) => saved.trim() === getSampleContent(lang).trim()
+			);
+			if (isSavedSample) {
+				localStorage.removeItem(STORAGE_KEY);
+				appState.content = getSampleContent(appState.language);
+			} else {
+				appState.content = saved;
+				isUserContent = true;
+			}
 		} else {
 			appState.content = getSampleContent(appState.language);
 		}
 	});
 
-	// Save to localStorage on content change
+	// Save to localStorage — only user content, never sample text
 	$effect(() => {
-		if (appState.content !== undefined && appState.content !== '') {
+		if (isUserContent && appState.content) {
 			localStorage.setItem(STORAGE_KEY, appState.content);
 		}
 	});
