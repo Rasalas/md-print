@@ -716,8 +716,9 @@ ul, ol {
 		max-width: 100% !important;
 	}
 
-	/* Hide page gaps in print */
-	.paper .page-gap {
+	/* Hide page gaps and fillers in print */
+	.paper .page-gap,
+	.paper .page-filler {
 		display: none !important;
 	}
 

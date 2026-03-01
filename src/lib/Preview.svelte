@@ -80,8 +80,9 @@
 		// Skip on mobile widths
 		if (el.offsetWidth < 400) return;
 
-		// 1. Remove existing gaps and paginated classes (idempotent)
+		// 1. Remove existing gaps, fillers, and paginated classes (idempotent)
 		for (const gap of el.querySelectorAll('.page-gap')) gap.remove();
+		for (const fill of el.querySelectorAll('.page-filler')) fill.remove();
 		for (const pb of el.querySelectorAll('.paginated')) pb.classList.remove('paginated');
 
 		// 2. Measure content height per page via probe
@@ -155,6 +156,14 @@
 					lastHeading = null;
 				}
 			}
+		}
+
+		// 4. Pad last page to full height
+		if (pageNum > 1 && used > 0 && used < slotHeight) {
+			const filler = document.createElement('div');
+			filler.className = 'page-filler';
+			filler.style.height = (slotHeight - used) + 'px';
+			el.appendChild(filler);
 		}
 	}
 
