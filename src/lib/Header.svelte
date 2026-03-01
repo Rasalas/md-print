@@ -1,7 +1,7 @@
 <script>
 	import { appState } from './state.svelte.js';
 	import { PAPER_SIZES, PAGE_MARGINS } from './config.js';
-	import { mountExportSnapshot, printPreviewDocument } from './export.js';
+	import { mountExportSnapshot, printPreviewDocument, waitForExportSnapshot } from './export.js';
 	import AboutModal from './AboutModal.svelte';
 
 	let isGenerating = $state(false);
@@ -15,6 +15,7 @@
 			const snapshot = mountExportSnapshot({ mode: 'pdf' });
 			if (!snapshot) return;
 			cleanupSnapshot = snapshot.cleanup;
+			await waitForExportSnapshot(snapshot.paper);
 
 			const title = snapshot.title;
 			const filename = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase();

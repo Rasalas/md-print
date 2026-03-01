@@ -21,11 +21,17 @@ body {
 }
 
 .paper.export-paper .page-gap {
+	display: block !important;
 	height: 0 !important;
 	margin: 0 !important;
 	background: transparent !important;
 	break-before: page;
 	page-break-before: always;
+}
+
+.paper.export-paper .page-number,
+.paper.export-paper .page-filler {
+	display: none !important;
 }
 
 .paper.export-paper .pagebreak {
@@ -40,6 +46,16 @@ body {
 
 .paper.export-paper .pagebreak.paginated {
 	display: none !important;
+}
+
+/* Keep print line wraps identical to preview */
+.paper.export-paper a[href^="http"]::after {
+	content: none !important;
+}
+
+.paper.export-paper pre {
+	white-space: pre !important;
+	word-wrap: normal !important;
 }
 `;
 
@@ -95,6 +111,19 @@ async function waitForAssets(doc) {
 	await new Promise((resolve) => setTimeout(resolve, 50));
 }
 
+function waitForImageElements(images) {
+	const pending = Array.from(images)
+		.filter((img) => !img.complete)
+		.map(
+			(img) =>
+				new Promise((resolve) => {
+					img.addEventListener('load', resolve, { once: true });
+					img.addEventListener('error', resolve, { once: true });
+				})
+		);
+	return Promise.all(pending);
+}
+
 function normalizeExportNodes(paper, options = {}) {
 	const mode = options.mode || 'print';
 
@@ -138,6 +167,19 @@ export function mountExportSnapshot(options = {}) {
 		...snapshot,
 		cleanup: () => host.remove()
 	};
+}
+
+export async function waitForExportSnapshot(rootEl) {
+	if (!rootEl) return;
+	await waitForImageElements(rootEl.querySelectorAll('img'));
+	if (document.fonts?.ready) {
+		try {
+			await document.fonts.ready;
+		} catch {
+			// Ignore font loading errors for export.
+		}
+	}
+	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 
 export async function printPreviewDocument() {
