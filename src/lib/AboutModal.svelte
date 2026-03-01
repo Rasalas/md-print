@@ -86,9 +86,10 @@
 					<h3 class="section-title">Rechtliches</h3>
 					<ul class="legal-list">
 						<li>Lizenziert unter der <a href="https://github.com/Rasalas/md-print/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT-Lizenz</a></li>
-						<li>Schriften werden von <a href="https://fonts.google.com/" target="_blank" rel="noopener noreferrer">Google Fonts</a> geladen (Verbindung zu Google-Servern)</li>
+						<li>Alle Schriften werden lokal ausgeliefert — keine externen Verbindungen</li>
 						<li>Dokumente werden ausschließlich lokal im Browser verarbeitet — keine Daten werden an Server übertragen</li>
 						<li>Einstellungen und Inhalte werden im <code>localStorage</code> des Browsers gespeichert</li>
+						<li>Gehostet auf <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a></li>
 					</ul>
 				</div>
 			</div>

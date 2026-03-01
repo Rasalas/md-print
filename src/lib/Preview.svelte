@@ -1,7 +1,7 @@
 <script>
 	import { appState } from './state.svelte.js';
 	import { renderMarkdown } from './markdown.js';
-	import { PAPER_SIZES, TOC_LABELS } from './config.js';
+	import { PAPER_SIZES, PAGE_MARGINS, TOC_LABELS } from './config.js';
 
 	let debounceTimer;
 
@@ -21,7 +21,7 @@
 
 	let paper = $derived(PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4);
 
-	let pageStyle = $derived(`@page { size: ${paper.page}; margin: 25mm 20mm 30mm 20mm; }`);
+	let pageStyle = $derived(`@page { size: ${paper.page}; margin: ${PAGE_MARGINS.map(v => v + 'mm').join(' ')}; }`);
 
 	let paperStyle = $derived(`width: ${paper.width};`);
 

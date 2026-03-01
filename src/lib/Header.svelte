@@ -1,6 +1,6 @@
 <script>
 	import { appState } from './state.svelte.js';
-	import { PAPER_SIZES } from './config.js';
+	import { PAPER_SIZES, PAGE_MARGINS } from './config.js';
 	import AboutModal from './AboutModal.svelte';
 
 	let isGenerating = $state(false);
@@ -19,7 +19,7 @@
 
 			await html2pdf()
 				.set({
-					margin: [25, 20, 30, 20],
+					margin: PAGE_MARGINS,
 					filename: `${filename}.pdf`,
 					image: { type: 'jpeg', quality: 0.98 },
 					html2canvas: { scale: 2, useCORS: true },
@@ -35,14 +35,71 @@
 </script>
 
 <header class="app-header">
-	<div class="header-left">
-		<div class="logo">
+	<div class="header-row-top">
+		<div class="header-left">
 			<span class="logo-text">md<span class="logo-dot">·</span>print</span>
+			<span class="subtitle">Beautiful Markdown Printing</span>
 		</div>
-		<span class="subtitle">Beautiful Markdown Printing</span>
+
+		<div class="header-actions">
+			<button
+				class="icon-btn"
+				title="Über md·print"
+				onclick={() => (showAbout = true)}
+			>
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<circle cx="12" cy="12" r="10"></circle>
+					<line x1="12" y1="16" x2="12" y2="12"></line>
+					<line x1="12" y1="8" x2="12.01" y2="8"></line>
+				</svg>
+			</button>
+
+			<button
+				class="icon-btn"
+				class:active={appState.showToc}
+				title="Inhaltsverzeichnis"
+				onclick={() => (appState.showToc = !appState.showToc)}
+			>
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="8" y1="6" x2="21" y2="6"></line>
+					<line x1="8" y1="12" x2="21" y2="12"></line>
+					<line x1="8" y1="18" x2="21" y2="18"></line>
+					<line x1="3" y1="6" x2="3.01" y2="6"></line>
+					<line x1="3" y1="12" x2="3.01" y2="12"></line>
+					<line x1="3" y1="18" x2="3.01" y2="18"></line>
+				</svg>
+			</button>
+
+			<button
+				class="pdf-btn"
+				title="Als PDF herunterladen"
+				onclick={downloadPdf}
+				disabled={isGenerating}
+			>
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+					<polyline points="7 10 12 15 17 10"></polyline>
+					<line x1="12" y1="15" x2="12" y2="3"></line>
+				</svg>
+				<span class="btn-label">{isGenerating ? 'PDF...' : 'PDF'}</span>
+			</button>
+
+			<button
+				class="print-btn"
+				title="Drucken (Ctrl+P)"
+				onclick={() => window.print()}
+			>
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="6 9 6 2 18 2 18 9"></polyline>
+					<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+					<rect x="6" y="14" width="12" height="8"></rect>
+				</svg>
+				<span class="btn-label">Drucken</span>
+			</button>
+		</div>
 	</div>
 
-	<div class="header-controls">
+	<div class="header-row-settings">
 		<div class="control-group">
 			<label class="control-label" for="lang-select">Sprache</label>
 			<select id="lang-select" bind:value={appState.language}>
@@ -71,62 +128,6 @@
 				<option value="editorial">Editorial</option>
 			</select>
 		</div>
-
-		<button
-			class="icon-btn"
-			title="Über md·print"
-			onclick={() => (showAbout = true)}
-		>
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<circle cx="12" cy="12" r="10"></circle>
-				<line x1="12" y1="16" x2="12" y2="12"></line>
-				<line x1="12" y1="8" x2="12.01" y2="8"></line>
-			</svg>
-		</button>
-
-		<button
-			class="icon-btn"
-			class:active={appState.showToc}
-			title="Inhaltsverzeichnis"
-			onclick={() => (appState.showToc = !appState.showToc)}
-		>
-			<!-- List/TOC icon -->
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<line x1="8" y1="6" x2="21" y2="6"></line>
-				<line x1="8" y1="12" x2="21" y2="12"></line>
-				<line x1="8" y1="18" x2="21" y2="18"></line>
-				<line x1="3" y1="6" x2="3.01" y2="6"></line>
-				<line x1="3" y1="12" x2="3.01" y2="12"></line>
-				<line x1="3" y1="18" x2="3.01" y2="18"></line>
-			</svg>
-		</button>
-
-		<button
-			class="pdf-btn"
-			title="Als PDF herunterladen"
-			onclick={downloadPdf}
-			disabled={isGenerating}
-		>
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-				<polyline points="7 10 12 15 17 10"></polyline>
-				<line x1="12" y1="15" x2="12" y2="3"></line>
-			</svg>
-			<span class="btn-label">{isGenerating ? 'PDF...' : 'PDF'}</span>
-		</button>
-
-		<button
-			class="print-btn"
-			title="Drucken (Ctrl+P)"
-			onclick={() => window.print()}
-		>
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<polyline points="6 9 6 2 18 2 18 9"></polyline>
-				<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-				<rect x="6" y="14" width="12" height="8"></rect>
-			</svg>
-			<span class="btn-label">Drucken</span>
-		</button>
 	</div>
 </header>
 
@@ -135,24 +136,33 @@
 <style>
 	.app-header {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0 1.2em;
-		height: 52px;
+		flex-direction: column;
 		background: var(--app-surface);
 		border-bottom: 1px solid var(--app-border);
 		flex-shrink: 0;
+	}
+
+	.header-row-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0 1.2em;
+		height: 48px;
 		gap: 1em;
+	}
+
+	.header-row-settings {
+		display: flex;
+		align-items: center;
+		gap: 1em;
+		padding: 0.4em 1.2em;
+		border-top: 1px solid var(--app-border);
 	}
 
 	.header-left {
 		display: flex;
 		align-items: baseline;
 		gap: 0.8em;
-		flex-shrink: 0;
-	}
-
-	.logo {
 		flex-shrink: 0;
 	}
 
@@ -175,12 +185,10 @@
 		white-space: nowrap;
 	}
 
-	.header-controls {
+	.header-actions {
 		display: flex;
 		align-items: center;
-		gap: 0.8em;
-		flex-wrap: wrap;
-		justify-content: flex-end;
+		gap: 0.5em;
 	}
 
 	.control-group {
@@ -295,19 +303,18 @@
 
 	/* Responsive */
 	@media (max-width: 768px) {
-		.app-header {
-			flex-wrap: wrap;
-			height: auto;
-			padding: 0.6em 0.8em;
-			gap: 0.5em;
+		.header-row-top {
+			padding: 0 0.8em;
+			height: 44px;
+		}
+
+		.header-row-settings {
+			padding: 0.35em 0.8em;
+			gap: 0.6em;
 		}
 
 		.subtitle {
 			display: none;
-		}
-
-		.header-controls {
-			gap: 0.5em;
 		}
 
 		.control-label {
@@ -317,13 +324,26 @@
 		.btn-label {
 			display: none;
 		}
+
+		.icon-btn {
+			width: 32px;
+			height: 32px;
+		}
+
+		.pdf-btn,
+		.print-btn {
+			padding: 0.3em 0.6em;
+		}
 	}
 
 	@media (max-width: 480px) {
+		.header-row-settings {
+			gap: 0.4em;
+		}
+
 		select {
 			padding: 0.25em 1.5em 0.25em 0.4em;
 			font-size: 0.75rem;
 		}
 	}
-
 </style>
