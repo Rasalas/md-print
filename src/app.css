@@ -363,7 +363,6 @@ ul, ol {
 }
 
 .paper.export-paper .page-gap {
-	height: 0 !important;
 	margin: 0 !important;
 	background: transparent !important;
 	page-break-before: always;
@@ -382,6 +381,10 @@ ul, ol {
 
 .paper.export-paper .pagebreak.paginated {
 	display: none !important;
+}
+
+.paper.export-paper .page-gap + * {
+	margin-top: 0 !important;
 }
 
 /* --- Code: Inline ------------------------------------------ */

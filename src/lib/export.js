@@ -24,16 +24,23 @@ body {
 
 .paper.export-paper .page-gap {
 	display: block !important;
-	height: 0 !important;
 	margin: 0 !important;
 	background: transparent !important;
 	break-before: page;
 	page-break-before: always;
 }
 
-.paper.export-paper .page-number,
-.paper.export-paper .page-filler {
+.paper.export-paper .page-number {
 	display: none !important;
+}
+
+.paper.export-paper .page-filler,
+.paper.export-paper .page-gap {
+	display: block !important;
+}
+
+.paper.export-paper .page-filler {
+	background: transparent !important;
 }
 
 .paper.export-paper .pagebreak {
@@ -48,6 +55,10 @@ body {
 
 .paper.export-paper .pagebreak.paginated {
 	display: none !important;
+}
+
+.paper.export-paper .page-gap + * {
+	margin-top: 0 !important;
 }
 
 /* Keep print line wraps identical to preview */
@@ -170,7 +181,7 @@ export async function waitForExportSnapshot(rootEl) {
 			// Ignore font loading errors for export.
 		}
 	}
-	paginatePaper(rootEl, { showPageNumbers: false });
+	paginatePaper(rootEl, { showPageNumbers: false, mode: 'export' });
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 

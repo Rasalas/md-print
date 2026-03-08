@@ -214,7 +214,28 @@ async function collectPreviewMetrics(page) {
 
 		const paper = document.querySelector('.paper');
 		if (!paper) throw new Error('Preview-Paper nicht gefunden.');
-		return collectPaperMetrics(paper);
+		const metrics = collectPaperMetrics(paper);
+		const paddingTop = Number.parseFloat(getComputedStyle(paper).paddingTop) || 0;
+		const gapOffsets = Array.from(paper.querySelectorAll(':scope > .page-gap')).map((gap) => {
+			const gapRect = gap.getBoundingClientRect();
+			let next = gap.nextElementSibling;
+			while (
+				next &&
+				(next.classList.contains('page-number') || next.classList.contains('page-filler'))
+			) {
+				next = next.nextElementSibling;
+			}
+
+			if (!next) return null;
+			const nextRect = next.getBoundingClientRect();
+			return nextRect.top - gapRect.bottom;
+		}).filter((value) => value !== null);
+
+		return {
+			...metrics,
+			paddingTop,
+			gapOffsets
+		};
 	});
 }
 
@@ -250,7 +271,18 @@ async function collectExportMetrics(page, mode) {
 
 		try {
 			await waitForExportSnapshot(snapshot.paper);
-			return collectPaperMetrics(snapshot.paper);
+			const metrics = collectPaperMetrics(snapshot.paper);
+			const paddingTop = Number.parseFloat(getComputedStyle(snapshot.paper).paddingTop) || 0;
+			const gapHeights = Array.from(snapshot.paper.querySelectorAll(':scope > .page-gap')).map((gap) => {
+				const gapRect = gap.getBoundingClientRect();
+				return gapRect.height;
+			});
+
+			return {
+				...metrics,
+				paddingTop,
+				gapHeights
+			};
 		} finally {
 			snapshot.cleanup();
 		}
@@ -315,8 +347,14 @@ async function main() {
 			const previewMatchesPrint = sameBreaks(previewBreaks, printBreaks);
 			const printMatchesPdf = sameBreaks(printBreaks, pdfBreaks);
 			const pdfPageCountMatches = pdfPages === pdfSnapshot.pageCount;
+			const previewPaddingMatches = preview.gapOffsets.every(
+				(offset) => Math.abs(offset - preview.paddingTop) < 1.5
+			);
+			const exportPaddingMatches = printSnapshot.gapHeights.every(
+				(height) => Math.abs(height - printSnapshot.paddingTop) < 1.5
+			);
 
-			if (!previewMatchesPrint || !printMatchesPdf || !pdfPageCountMatches) {
+			if (!previewMatchesPrint || !printMatchesPdf || !pdfPageCountMatches || !previewPaddingMatches || !exportPaddingMatches) {
 				hasFailures = true;
 			}
 
@@ -328,11 +366,17 @@ async function main() {
 			console.log(`  Preview == Print: ${previewMatchesPrint ? 'ja' : 'nein'}`);
 			console.log(`  Print == PDF-Snapshot: ${printMatchesPdf ? 'ja' : 'nein'}`);
 			console.log(`  PDF-Zahl passt: ${pdfPageCountMatches ? 'ja' : 'nein'}`);
+			console.log(`  Preview-Top-Marge passt: ${previewPaddingMatches ? 'ja' : 'nein'}`);
+			console.log(`  Export-Top-Marge passt: ${exportPaddingMatches ? 'ja' : 'nein'}`);
 
-			if (!previewMatchesPrint || !printMatchesPdf) {
+			if (!previewMatchesPrint || !printMatchesPdf || !previewPaddingMatches || !exportPaddingMatches) {
 				console.log('  Preview-Breaks:', previewBreaks);
 				console.log('  Print-Breaks:  ', printBreaks);
 				console.log('  PDF-Breaks:    ', pdfBreaks);
+				console.log('  Preview-Top-Offsets:', preview.gapOffsets);
+				console.log('  Preview-PaddingTop:', preview.paddingTop);
+				console.log('  Export-Gap-Heights:', printSnapshot.gapHeights);
+				console.log('  Export-PaddingTop:', printSnapshot.paddingTop);
 			}
 		}
 	} finally {

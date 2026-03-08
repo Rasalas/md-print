@@ -5,6 +5,16 @@ function clearPaginationArtifacts(paper) {
 	for (const pagebreak of paper.querySelectorAll('.paginated')) pagebreak.classList.remove('paginated');
 }
 
+function measurePagePadding(paper) {
+	const styles = getComputedStyle(paper);
+	return {
+		top: Number.parseFloat(styles.paddingTop) || 0,
+		right: Number.parseFloat(styles.paddingRight) || 0,
+		bottom: Number.parseFloat(styles.paddingBottom) || 0,
+		left: Number.parseFloat(styles.paddingLeft) || 0
+	};
+}
+
 function measureSlotHeight(paper) {
 	const pageHeight =
 		paper.style.getPropertyValue('--paper-min-h').trim() ||
@@ -35,19 +45,36 @@ function measureChildren(paper) {
 	});
 }
 
-function insertBreak(parent, beforeEl, pageNum, usedHeight, slotHeight, showPageNumbers) {
+function insertBreak(
+	parent,
+	beforeEl,
+	pageNum,
+	usedHeight,
+	slotHeight,
+	pagePadding,
+	showPageNumbers,
+	mode
+) {
 	if (beforeEl.classList.contains('pagebreak')) beforeEl.classList.add('paginated');
 
+	const filler = document.createElement('div');
+	filler.className = 'page-filler';
+	filler.style.height = `${Math.max(0, slotHeight - usedHeight) + pagePadding.bottom}px`;
+
 	if (showPageNumbers) {
-		const pageNumber = document.createElement('div');
-		pageNumber.className = 'page-number';
-		pageNumber.textContent = String(pageNum);
-		pageNumber.style.height = `${Math.max(0, slotHeight - usedHeight)}px`;
-		parent.insertBefore(pageNumber, beforeEl);
+		filler.classList.add('page-number');
+		filler.textContent = String(pageNum);
 	}
+
+	parent.insertBefore(filler, beforeEl);
 
 	const gap = document.createElement('div');
 	gap.className = 'page-gap';
+	if (mode === 'export') {
+		gap.style.height = `${pagePadding.top}px`;
+	} else {
+		gap.style.margin = `0 ${-pagePadding.right}px ${pagePadding.top}px ${-pagePadding.left}px`;
+	}
 	parent.insertBefore(gap, beforeEl);
 }
 
@@ -59,7 +86,7 @@ export function resetPagination(paper) {
 export function paginatePaper(paper, options = {}) {
 	if (!paper) return { pageCount: 0, breakCount: 0, slotHeight: 0 };
 
-	const { showPageNumbers = false, skipIfNarrow = false } = options;
+	const { showPageNumbers = false, skipIfNarrow = false, mode = 'preview' } = options;
 	clearPaginationArtifacts(paper);
 
 	if (skipIfNarrow && paper.offsetWidth < 400) {
@@ -73,6 +100,7 @@ export function paginatePaper(paper, options = {}) {
 
 	const minAfterHeading = slotHeight * 0.2;
 	const children = measureChildren(paper);
+	const pagePadding = measurePagePadding(paper);
 	if (children.length === 0) {
 		return { pageCount: 1, breakCount: 0, slotHeight };
 	}
@@ -147,7 +175,9 @@ export function paginatePaper(paper, options = {}) {
 			breakpoint.pageNum,
 			breakpoint.usedHeight,
 			slotHeight,
-			showPageNumbers
+			pagePadding,
+			showPageNumbers,
+			mode
 		);
 	}
 
