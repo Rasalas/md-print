@@ -1,3 +1,5 @@
+import { paginatePaper, resetPagination } from './pagination.js';
+
 const EXPORT_PRINT_STYLES = `
 html, body {
 	margin: 0 !important;
@@ -13,7 +15,7 @@ body {
 	margin: 0 !important;
 	width: var(--paper-width, 210mm) !important;
 	max-width: var(--paper-width, 210mm) !important;
-	min-height: var(--paper-min-h, 297mm) !important;
+	min-height: auto !important;
 	padding: 25mm 20mm 30mm 20mm !important;
 	box-sizing: border-box !important;
 	box-shadow: none !important;
@@ -125,18 +127,7 @@ function waitForImageElements(images) {
 }
 
 function normalizeExportNodes(paper, options = {}) {
-	const mode = options.mode || 'print';
-
-	// Non-number filler blocks are visual helpers only.
-	for (const filler of paper.querySelectorAll('.page-filler')) {
-		if (!filler.classList.contains('page-number')) filler.remove();
-	}
-
-	if (mode === 'pdf') {
-		// PDF page splitting is unstable with large spacer number blocks.
-		// We render numbers with jsPDF after page generation.
-		for (const num of paper.querySelectorAll('.page-number, .page-filler')) num.remove();
-	}
+	resetPagination(paper);
 }
 
 export function createExportSnapshot(options = {}) {
@@ -179,11 +170,12 @@ export async function waitForExportSnapshot(rootEl) {
 			// Ignore font loading errors for export.
 		}
 	}
+	paginatePaper(rootEl, { showPageNumbers: false });
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 
 export async function printPreviewDocument() {
-	const snapshot = createExportSnapshot({ mode: 'print' });
+	const snapshot = mountExportSnapshot({ mode: 'print' });
 	if (!snapshot) return false;
 
 	const iframe = document.createElement('iframe');
@@ -197,9 +189,12 @@ export async function printPreviewDocument() {
 	};
 
 	try {
+		await waitForExportSnapshot(snapshot.paper);
+
 		const doc = iframe.contentDocument;
 		const win = iframe.contentWindow;
 		if (!doc || !win) {
+			snapshot.cleanup();
 			cleanup();
 			return false;
 		}
@@ -221,6 +216,7 @@ export async function printPreviewDocument() {
 	<body>${snapshot.paper.outerHTML}</body>
 </html>`);
 		doc.close();
+		snapshot.cleanup();
 
 		await waitForAssets(doc);
 
@@ -231,6 +227,7 @@ export async function printPreviewDocument() {
 
 		return true;
 	} catch {
+		snapshot.cleanup();
 		cleanup();
 		return false;
 	}

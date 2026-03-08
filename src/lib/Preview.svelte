@@ -3,6 +3,7 @@
 	import { appState } from './state.svelte.js';
 	import { renderMarkdown } from './markdown.js';
 	import { PAPER_SIZES, PAGE_MARGINS, TOC_LABELS } from './config.js';
+	import { paginatePaper } from './pagination.js';
 
 	let debounceTimer;
 	let paperRef;
@@ -73,120 +74,9 @@
 		appState.showPageNumbers;
 
 		tick().then(() => {
-			if (paperRef) paginatePreview(paperRef);
+			if (paperRef) paginatePaper(paperRef, { showPageNumbers: appState.showPageNumbers, skipIfNarrow: true });
 		});
 	});
-
-	function paginatePreview(el) {
-		// Skip on mobile widths
-		if (el.offsetWidth < 400) return;
-
-		// 1. Remove existing gaps, fillers, page numbers, and paginated classes (idempotent)
-		for (const e of el.querySelectorAll('.page-gap, .page-filler, .page-number')) e.remove();
-		for (const pb of el.querySelectorAll('.paginated')) pb.classList.remove('paginated');
-
-		// 2. Measure content height per page via probe
-		const pageH = PAPER_SIZES[appState.paperSize]?.page.split(' ')[1] || '297mm';
-		const [mTop, , mBottom] = PAGE_MARGINS;
-
-		const probe = document.createElement('div');
-		probe.style.cssText = `height: calc(${pageH} - ${mTop}mm - ${mBottom}mm); position: absolute; visibility: hidden;`;
-		el.appendChild(probe);
-		const slotHeight = probe.offsetHeight;
-		probe.remove();
-
-		if (slotHeight <= 0) return;
-
-		// Minimum content height after a heading before it counts as
-		// "anchored" — roughly 5–6 lines of body text.
-		// Below this threshold the heading gets pulled to the next page.
-		const minAfterHeading = slotHeight * 0.20;
-
-		// 3. Walk top-level children, accumulate height
-		const children = Array.from(el.children);
-		let used = 0;
-		let pageNum = 1;
-		let lastHeading = null;       // most recent heading element
-		let usedBeforeLastHeading = 0; // `used` just before that heading
-		let contentAfterHeading = 0;   // height accumulated after the heading
-
-		const showNums = appState.showPageNumbers;
-
-		for (const child of children) {
-			const h = child.offsetHeight;
-
-			// Manual pagebreak
-			if (child.classList.contains('pagebreak')) {
-				child.classList.add('paginated');
-				insertBreak(el, child, pageNum, used, slotHeight, showNums);
-				used = 0;
-				pageNum++;
-				lastHeading = null;
-				continue;
-			}
-
-			// Would this element overflow the current page?
-			if (used > 0 && used + h > slotHeight) {
-				// Heading protection (like LaTeX \needspace):
-				// If a recent heading hasn't been followed by enough
-				// content, pull it (and everything after it) to the
-				// next page so it doesn't sit stranded at the bottom.
-				if (lastHeading && contentAfterHeading < minAfterHeading) {
-					insertBreak(el, lastHeading, pageNum, usedBeforeLastHeading, slotHeight, showNums);
-					pageNum++;
-					used = (used - usedBeforeLastHeading) + h;
-				} else {
-					insertBreak(el, child, pageNum, used, slotHeight, showNums);
-					pageNum++;
-					used = h;
-				}
-				lastHeading = null;
-			} else {
-				used += h;
-			}
-
-			// Track headings (h1-h6) for widow protection
-			const tag = child.tagName;
-			if (tag && /^H[1-6]$/.test(tag)) {
-				lastHeading = child;
-				usedBeforeLastHeading = used - h;
-				contentAfterHeading = 0;
-			} else if (lastHeading) {
-				contentAfterHeading += h;
-				// Once enough content follows, the heading is "anchored"
-				if (contentAfterHeading >= minAfterHeading) {
-					lastHeading = null;
-				}
-			}
-		}
-
-		// 4. Pad last page to full height (with optional page number)
-		if (pageNum > 1 && used > 0 && used < slotHeight) {
-			const filler = document.createElement('div');
-			filler.className = 'page-filler';
-			if (showNums) {
-				filler.classList.add('page-number');
-				filler.textContent = String(pageNum);
-			}
-			filler.style.height = (slotHeight - used) + 'px';
-			el.appendChild(filler);
-		}
-	}
-
-	function insertBreak(parent, beforeEl, pageNum, usedHeight, slotHeight, showNums) {
-		// Optional page number filling remaining space on the ending page
-		if (showNums) {
-			const pn = document.createElement('div');
-			pn.className = 'page-number';
-			pn.textContent = String(pageNum);
-			pn.style.height = Math.max(0, slotHeight - usedHeight) + 'px';
-			parent.insertBefore(pn, beforeEl);
-		}
-		// Dark gap strip between pages
-		const gap = document.createElement('div');
-		gap.className = 'page-gap';
-		parent.insertBefore(gap, beforeEl);
-	}
 </script>
 
 <svelte:head>
