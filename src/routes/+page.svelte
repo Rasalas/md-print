@@ -3,6 +3,7 @@
 	import Editor from '$lib/Editor.svelte';
 	import Preview from '$lib/Preview.svelte';
 	import { appState } from '$lib/state.svelte.js';
+	import { printPreviewDocument } from '$lib/export.js';
 
 	let splitRatio = $state(45);
 	let isDragging = $state(false);
@@ -25,6 +26,14 @@
 		isDragging = false;
 	}
 
+	function onKeydown(e) {
+		if (e.defaultPrevented) return;
+		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+			e.preventDefault();
+			printPreviewDocument();
+		}
+	}
+
 	// Persist settings on change
 	$effect(() => {
 		const { language, paperSize, theme, showToc, showPageNumbers } = appState;
@@ -44,7 +53,7 @@
 	});
 </script>
 
-<svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />
+<svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} onkeydown={onKeydown} />
 
 <div class="app-shell">
 	<Header />

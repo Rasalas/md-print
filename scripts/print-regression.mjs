@@ -122,10 +122,19 @@ Ladegeräte, Adapter und Akkus werden getrennt nach Gerät sortiert. So fällt s
 ## Kurz vor der Abfahrt
 Fenster schließen, Müll rausbringen, Pflanzen versorgen und die wichtigsten Nummern griffbereit halten.`;
 
+const LONG_PARAGRAPH_CASE = `# Langer Absatz
+
+${Array.from(
+	{ length: 220 },
+	(_, index) =>
+		`Dies ist Satz ${index + 1} mit etwas Text, der bewusst in einem einzigen Markdown-Absatz bleibt und daher nicht als eigener Top-Level-Knoten paginiert werden kann.`
+).join(' ')}`;
+
 const CASES = [
 	{ id: 'bissell', label: 'BISSELL-Problemfall', content: BISSELL_CASE },
 	{ id: 'heading-anchor', label: 'Heading-Schutz', content: HEADING_CASE },
-	{ id: 'mixed-blocks', label: 'Gemischte Blöcke', content: MIXED_BLOCKS_CASE }
+	{ id: 'mixed-blocks', label: 'Gemischte Blöcke', content: MIXED_BLOCKS_CASE },
+	{ id: 'long-paragraph', label: 'Langer Absatz', content: LONG_PARAGRAPH_CASE }
 ];
 
 function waitForServer(proc) {
@@ -183,11 +192,35 @@ async function loadCase(page, markdown) {
 	}, markdown);
 	await page.reload({ waitUntil: 'networkidle' });
 	await page.addScriptTag({ path: HTML2PDF_BUNDLE });
-	await page.waitForTimeout(800);
+	await page.waitForFunction(
+		() =>
+			document.querySelectorAll('.paged-preview .pagedjs_page').length > 0 ||
+			document.querySelector('.fallback-paper'),
+		null,
+		{ timeout: 10000 }
+	);
+	await page.waitForTimeout(500);
 }
 
 async function collectPreviewMetrics(page) {
 	return page.evaluate(() => {
+		const collectPagedMetrics = (pagesRoot) => {
+			const pages = Array.from(pagesRoot.querySelectorAll(':scope > .pagedjs_page'));
+			const breaks = pages.slice(1).map((pagedPage) => {
+				const label = pagedPage.textContent.replace(/\s+/g, ' ').trim().slice(0, 90);
+				return label || 'EMPTY';
+			});
+
+			return {
+				engine: 'paged',
+				pageCount: pages.length,
+				breakCount: Math.max(0, pages.length - 1),
+				breaks,
+				paddingTop: 0,
+				gapOffsets: []
+			};
+		};
+
 		const collectPaperMetrics = (paper) => {
 			const breaks = [];
 			for (const gap of paper.querySelectorAll(':scope > .page-gap')) {
@@ -212,7 +245,10 @@ async function collectPreviewMetrics(page) {
 			};
 		};
 
-		const paper = document.querySelector('.paper');
+		const paged = document.querySelector('.paged-preview .pagedjs_pages');
+		if (paged?.querySelector('.pagedjs_page')) return collectPagedMetrics(paged);
+
+		const paper = document.querySelector('.fallback-paper');
 		if (!paper) throw new Error('Preview-Paper nicht gefunden.');
 		const metrics = collectPaperMetrics(paper);
 		const paddingTop = Number.parseFloat(getComputedStyle(paper).paddingTop) || 0;
@@ -232,6 +268,7 @@ async function collectPreviewMetrics(page) {
 		}).filter((value) => value !== null);
 
 		return {
+			engine: 'paper',
 			...metrics,
 			paddingTop,
 			gapOffsets
@@ -241,6 +278,23 @@ async function collectPreviewMetrics(page) {
 
 async function collectExportMetrics(page, mode) {
 	return page.evaluate(async (currentMode) => {
+		const collectPagedMetrics = (pagesRoot) => {
+			const pages = Array.from(pagesRoot.querySelectorAll(':scope > .pagedjs_page'));
+			const breaks = pages.slice(1).map((pagedPage) => {
+				const label = pagedPage.textContent.replace(/\s+/g, ' ').trim().slice(0, 90);
+				return label || 'EMPTY';
+			});
+
+			return {
+				engine: 'paged',
+				pageCount: pages.length,
+				breakCount: Math.max(0, pages.length - 1),
+				breaks,
+				paddingTop: 0,
+				gapHeights: []
+			};
+		};
+
 		const collectPaperMetrics = (paper) => {
 			const breaks = [];
 			for (const gap of paper.querySelectorAll(':scope > .page-gap')) {
@@ -271,6 +325,8 @@ async function collectExportMetrics(page, mode) {
 
 		try {
 			await waitForExportSnapshot(snapshot.paper);
+			if (snapshot.kind === 'paged') return collectPagedMetrics(snapshot.paper);
+
 			const metrics = collectPaperMetrics(snapshot.paper);
 			const paddingTop = Number.parseFloat(getComputedStyle(snapshot.paper).paddingTop) || 0;
 			const gapHeights = Array.from(snapshot.paper.querySelectorAll(':scope > .page-gap')).map((gap) => {
@@ -279,6 +335,7 @@ async function collectExportMetrics(page, mode) {
 			});
 
 			return {
+				engine: 'paper',
 				...metrics,
 				paddingTop,
 				gapHeights
@@ -289,19 +346,26 @@ async function collectExportMetrics(page, mode) {
 	}, mode);
 }
 
-async function collectHtml2PdfPageCount(page) {
+async function collectGeneratedPdfPageCount(page) {
 	return page.evaluate(async () => {
-		const html2pdf = window.html2pdf;
-		if (!html2pdf) throw new Error('html2pdf ist im Browserkontext nicht geladen.');
 		const { PAPER_SIZES } = await import('/src/lib/config.js');
 		const { appState } = await import('/src/lib/state.svelte.js');
-		const { mountExportSnapshot, waitForExportSnapshot } = await import('/src/lib/export.js');
+		const { createPagedPdf, mountExportSnapshot, waitForExportSnapshot } = await import('/src/lib/export.js');
 		const snapshot = mountExportSnapshot({ mode: 'pdf' });
 		if (!snapshot) throw new Error('PDF-Snapshot fehlt.');
 
 		try {
 			await waitForExportSnapshot(snapshot.paper);
 			const format = (PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4).pdf;
+
+			if (snapshot.kind === 'paged') {
+				const pdf = await createPagedPdf(snapshot, format);
+				if (!pdf) throw new Error('Paged-PDF konnte nicht erzeugt werden.');
+				return pdf.internal.getNumberOfPages();
+			}
+
+			const html2pdf = window.html2pdf;
+			if (!html2pdf) throw new Error('html2pdf ist im Browserkontext nicht geladen.');
 			const pdf = await html2pdf()
 				.set({
 					margin: 0,
@@ -338,7 +402,7 @@ async function main() {
 			const preview = await collectPreviewMetrics(page);
 			const printSnapshot = await collectExportMetrics(page, 'print');
 			const pdfSnapshot = await collectExportMetrics(page, 'pdf');
-			const pdfPages = await collectHtml2PdfPageCount(page);
+			const pdfPages = await collectGeneratedPdfPageCount(page);
 
 			const previewBreaks = formatBreaks(preview.breaks);
 			const printBreaks = formatBreaks(printSnapshot.breaks);
@@ -362,7 +426,7 @@ async function main() {
 			console.log(`  Preview-Seiten: ${preview.pageCount}`);
 			console.log(`  Print-Snapshot: ${printSnapshot.pageCount}`);
 			console.log(`  PDF-Snapshot:   ${pdfSnapshot.pageCount}`);
-			console.log(`  html2pdf Seiten: ${pdfPages}`);
+			console.log(`  PDF-Ausgabe Seiten: ${pdfPages}`);
 			console.log(`  Preview == Print: ${previewMatchesPrint ? 'ja' : 'nein'}`);
 			console.log(`  Print == PDF-Snapshot: ${printMatchesPdf ? 'ja' : 'nein'}`);
 			console.log(`  PDF-Zahl passt: ${pdfPageCountMatches ? 'ja' : 'nein'}`);

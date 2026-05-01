@@ -30,10 +30,6 @@ body {
 	page-break-before: always;
 }
 
-.paper.export-paper .page-number {
-	display: none !important;
-}
-
 .paper.export-paper .page-filler,
 .paper.export-paper .page-gap {
 	display: block !important;
@@ -70,15 +66,44 @@ body {
 	white-space: pre !important;
 	word-wrap: normal !important;
 }
+
+.pagedjs_pages.export-pages {
+	display: block !important;
+	gap: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	width: auto !important;
+	background: #fff !important;
+	transform: none !important;
+}
+
+.pagedjs_pages.export-pages .pagedjs_page {
+	margin: 0 !important;
+	padding: 0 !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+	break-after: page;
+	page-break-after: always;
+}
+
+.pagedjs_pages.export-pages .pagedjs_page:last-child {
+	break-after: auto;
+	page-break-after: auto;
+}
 `;
 
+function getPagedSource() {
+	return document.querySelector('.paged-preview .pagedjs_pages');
+}
+
 function getPaperSource() {
-	return document.querySelector('.paper');
+	return document.querySelector('.fallback-paper');
 }
 
 function getPaperSize(source) {
-	const width = source.style.getPropertyValue('--paper-width').trim();
-	const height = source.style.getPropertyValue('--paper-min-h').trim();
+	const styleSource = source.closest('.paged-preview') || source;
+	const width = styleSource.style.getPropertyValue('--paper-width').trim();
+	const height = styleSource.style.getPropertyValue('--paper-min-h').trim();
 	if (!width || !height) return null;
 	return `${width} ${height}`;
 }
@@ -138,10 +163,24 @@ function waitForImageElements(images) {
 }
 
 function normalizeExportNodes(paper, options = {}) {
+	if (paper.classList.contains('pagedjs_pages')) return;
 	resetPagination(paper);
 }
 
 export function createExportSnapshot(options = {}) {
+	const pagedSource = getPagedSource();
+	if (pagedSource) {
+		const pages = pagedSource.cloneNode(true);
+		pages.classList.add('export-pages');
+
+		return {
+			paper: pages,
+			kind: 'paged',
+			title: getDocumentTitle(pagedSource),
+			pageSize: getPaperSize(pagedSource)
+		};
+	}
+
 	const source = getPaperSource();
 	if (!source) return null;
 
@@ -151,6 +190,7 @@ export function createExportSnapshot(options = {}) {
 
 	return {
 		paper,
+		kind: 'paper',
 		title: getDocumentTitle(source),
 		pageSize: getPaperSize(source)
 	};
@@ -181,8 +221,43 @@ export async function waitForExportSnapshot(rootEl) {
 			// Ignore font loading errors for export.
 		}
 	}
-	paginatePaper(rootEl, { showPageNumbers: false, mode: 'export' });
+	if (!rootEl.classList.contains('pagedjs_pages')) {
+		paginatePaper(rootEl, { showPageNumbers: false, mode: 'export' });
+	}
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
+export async function createPagedPdf(snapshot, format) {
+	const html2canvas = (await import('html2canvas')).default;
+	const { jsPDF } = await import('jspdf');
+	const pages = Array.from(snapshot.paper.querySelectorAll('.pagedjs_page'));
+	if (pages.length === 0) return null;
+
+	const pdf = new jsPDF({ unit: 'mm', format, orientation: 'portrait' });
+	const pageWidth = pdf.internal.pageSize.getWidth();
+	const pageHeight = pdf.internal.pageSize.getHeight();
+
+	for (let index = 0; index < pages.length; index += 1) {
+		if (index > 0) pdf.addPage(format, 'portrait');
+
+		const canvas = await html2canvas(pages[index], {
+			scale: 2,
+			useCORS: true,
+			backgroundColor: '#ffffff',
+			logging: false
+		});
+		const image = canvas.toDataURL('image/jpeg', 0.98);
+		pdf.addImage(image, 'JPEG', 0, 0, pageWidth, pageHeight);
+	}
+
+	return pdf;
+}
+
+export async function savePagedPdf(snapshot, format, filename) {
+	const pdf = await createPagedPdf(snapshot, format);
+	if (!pdf) return false;
+	pdf.save(`${filename}.pdf`);
+	return true;
 }
 
 export async function printPreviewDocument() {

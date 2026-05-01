@@ -215,6 +215,20 @@ ul, ol {
 	letter-spacing: -0.01em;
 }
 
+.paper h1,
+.paper h2,
+.paper h3,
+.paper h4,
+.paper h5,
+.paper h6 {
+	text-align: left;
+	text-align-last: auto;
+}
+
+.paper .frontmatter-header .doc-title {
+	text-align: center;
+}
+
 .paper h2 {
 	font-size: 1.4em;
 	font-weight: 700;
@@ -250,6 +264,11 @@ ul, ol {
 /* --- Paragraphs -------------------------------------------- */
 .paper p {
 	margin-bottom: 0.85em;
+}
+
+.pagedjs_pages .paper [data-align-last-split-element='justify'],
+.pagedjs_pages .paper[data-align-last-split-element='justify'] {
+	text-align-last: auto;
 }
 
 /* --- Links ------------------------------------------------- */
@@ -741,19 +760,14 @@ ul, ol {
 		page-break-inside: avoid;
 	}
 
-	/* Print links with href */
+	/* Keep print line wraps identical to the paged preview */
 	.paper a[href^="http"]::after {
-		content: " (" attr(href) ")";
-		font-size: 0.8em;
-		color: #666;
-		font-style: normal;
-		word-break: break-all;
+		content: none !important;
 	}
 
-	/* Wrap code in print */
-	pre {
-		white-space: pre-wrap;
-		word-wrap: break-word;
+	.paper pre {
+		white-space: pre !important;
+		word-wrap: normal !important;
 	}
 
 	img {

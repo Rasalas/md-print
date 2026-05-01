@@ -6,8 +6,8 @@ Write or paste Markdown on the left, see a typeset paper preview on the right, a
 
 ## Features
 
-- **Live preview** with debounced rendering in a realistic paper layout
-- **Print-optimized** output — the preview becomes the printed page, headers/editor hidden automatically
+- **Live paged preview** with debounced rendering into real paper pages
+- **Print-optimized** output — the paginated preview becomes the printed page, headers/editor hidden automatically
 - **Multiple themes** — Klassisch, Modern, Editorial
 - **Paper sizes** — A4, Letter, Legal (affects both preview and `@page` rules)
 - **KaTeX math** — inline `$...$` and display `$$...$$`
@@ -26,8 +26,10 @@ Write or paste Markdown on the left, see a typeset paper preview on the right, a
 
 - [SvelteKit](https://svelte.dev/docs/kit) with [Svelte 5](https://svelte.dev)
 - [marked](https://marked.js.org/) (Markdown parsing, GFM)
+- [Paged.js](https://pagedjs.org/) (CSS paged media and DOM pagination)
 - [KaTeX](https://katex.org/) (math rendering)
 - [highlight.js](https://highlightjs.org/) (syntax highlighting)
+- [html2canvas](https://html2canvas.hertzen.com/) + [jsPDF](https://github.com/parallax/jsPDF) (PDF export)
 - Static adapter — fully client-side, no server needed
 
 ## Getting started

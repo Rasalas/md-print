@@ -1,7 +1,7 @@
 <script>
 	import { appState } from './state.svelte.js';
 	import { PAPER_SIZES, PAGE_MARGINS } from './config.js';
-	import { mountExportSnapshot, printPreviewDocument, waitForExportSnapshot } from './export.js';
+	import { mountExportSnapshot, printPreviewDocument, savePagedPdf, waitForExportSnapshot } from './export.js';
 	import AboutModal from './AboutModal.svelte';
 
 	let isGenerating = $state(false);
@@ -11,7 +11,6 @@
 		isGenerating = true;
 		let cleanupSnapshot = null;
 		try {
-			const html2pdf = (await import('html2pdf.js')).default;
 			const snapshot = mountExportSnapshot({ mode: 'pdf' });
 			if (!snapshot) return;
 			cleanupSnapshot = snapshot.cleanup;
@@ -21,6 +20,12 @@
 			const filename = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase();
 			const format = (PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4).pdf;
 
+			if (snapshot.kind === 'paged') {
+				await savePagedPdf(snapshot, format, filename);
+				return;
+			}
+
+			const html2pdf = (await import('html2pdf.js')).default;
 			let worker = html2pdf()
 				.set({
 					margin: 0,
@@ -33,7 +38,7 @@
 				.from(snapshot.paper)
 				.toPdf();
 
-			if (appState.showPageNumbers) {
+			if (appState.showPageNumbers && snapshot.kind !== 'paged') {
 				worker = worker.get('pdf').then((pdf) => {
 					const total = pdf.internal.getNumberOfPages();
 					const y = pdf.internal.pageSize.getHeight() - (PAGE_MARGINS[2] + 5);
