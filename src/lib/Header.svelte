@@ -1,59 +1,16 @@
 <script>
 	import { appState } from './state.svelte.js';
-	import { PAPER_SIZES, PAGE_MARGINS } from './config.js';
-	import { mountExportSnapshot, printPreviewDocument, savePagedPdf, waitForExportSnapshot } from './export.js';
+	import { printPreviewDocument } from './export.js';
 	import AboutModal from './AboutModal.svelte';
 
 	let isGenerating = $state(false);
 	let showAbout = $state(false);
 
-	async function downloadPdf() {
+	async function openPdfPrintDialog() {
 		isGenerating = true;
-		let cleanupSnapshot = null;
 		try {
-			const snapshot = mountExportSnapshot({ mode: 'pdf' });
-			if (!snapshot) return;
-			cleanupSnapshot = snapshot.cleanup;
-			await waitForExportSnapshot(snapshot.paper);
-
-			const title = snapshot.title;
-			const filename = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase();
-			const format = (PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4).pdf;
-
-			if (snapshot.kind === 'paged') {
-				await savePagedPdf(snapshot, format, filename);
-				return;
-			}
-
-			const html2pdf = (await import('html2pdf.js')).default;
-			let worker = html2pdf()
-				.set({
-					margin: 0,
-					filename: `${filename}.pdf`,
-					image: { type: 'jpeg', quality: 0.98 },
-					html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-					jsPDF: { unit: 'mm', format, orientation: 'portrait' },
-					pagebreak: { mode: ['css'] }
-				})
-				.from(snapshot.paper)
-				.toPdf();
-
-			if (appState.showPageNumbers && snapshot.kind !== 'paged') {
-				worker = worker.get('pdf').then((pdf) => {
-					const total = pdf.internal.getNumberOfPages();
-					const y = pdf.internal.pageSize.getHeight() - (PAGE_MARGINS[2] + 5);
-					for (let i = 1; i <= total; i++) {
-						pdf.setPage(i);
-						pdf.setFontSize(10);
-						pdf.setTextColor(85, 85, 85);
-						pdf.text(String(i), pdf.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-					}
-				});
-			}
-
-			await worker.save();
+			await printPreviewDocument();
 		} finally {
-			cleanupSnapshot?.();
 			isGenerating = false;
 		}
 	}
@@ -111,8 +68,8 @@
 
 			<button
 				class="pdf-btn"
-				title="Als PDF herunterladen"
-				onclick={downloadPdf}
+				title="Als PDF speichern"
+				onclick={openPdfPrintDialog}
 				disabled={isGenerating}
 			>
 				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

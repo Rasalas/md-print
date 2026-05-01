@@ -227,39 +227,6 @@ export async function waitForExportSnapshot(rootEl) {
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 
-export async function createPagedPdf(snapshot, format) {
-	const html2canvas = (await import('html2canvas')).default;
-	const { jsPDF } = await import('jspdf');
-	const pages = Array.from(snapshot.paper.querySelectorAll('.pagedjs_page'));
-	if (pages.length === 0) return null;
-
-	const pdf = new jsPDF({ unit: 'mm', format, orientation: 'portrait' });
-	const pageWidth = pdf.internal.pageSize.getWidth();
-	const pageHeight = pdf.internal.pageSize.getHeight();
-
-	for (let index = 0; index < pages.length; index += 1) {
-		if (index > 0) pdf.addPage(format, 'portrait');
-
-		const canvas = await html2canvas(pages[index], {
-			scale: 2,
-			useCORS: true,
-			backgroundColor: '#ffffff',
-			logging: false
-		});
-		const image = canvas.toDataURL('image/jpeg', 0.98);
-		pdf.addImage(image, 'JPEG', 0, 0, pageWidth, pageHeight);
-	}
-
-	return pdf;
-}
-
-export async function savePagedPdf(snapshot, format, filename) {
-	const pdf = await createPagedPdf(snapshot, format);
-	if (!pdf) return false;
-	pdf.save(`${filename}.pdf`);
-	return true;
-}
-
 export async function printPreviewDocument() {
 	const snapshot = mountExportSnapshot({ mode: 'print' });
 	if (!snapshot) return false;

@@ -374,7 +374,7 @@ ul, ol {
 	color: var(--paper-text-muted);
 }
 
-/* --- Export mode (shared by print iframe + PDF source) ---- */
+/* --- Export mode (shared by print iframe + browser PDF) ---- */
 .paper.export-paper {
 	box-shadow: none !important;
 	border-radius: 0 !important;

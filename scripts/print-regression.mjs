@@ -1,12 +1,10 @@
 import { spawn } from 'node:child_process';
-import { resolve } from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
 
 const HOST = '127.0.0.1';
 const PORT = 4174;
 const BASE_URL = `http://${HOST}:${PORT}/`;
-const HTML2PDF_BUNDLE = resolve('node_modules/html2pdf.js/dist/html2pdf.bundle.min.js');
 
 const BISSELL_CASE = String.raw`# Anleitung: BISSELL SpotClean ProHeat (36988) mit Reinigungslösung
 
@@ -191,7 +189,6 @@ async function loadCase(page, markdown) {
 		);
 	}, markdown);
 	await page.reload({ waitUntil: 'networkidle' });
-	await page.addScriptTag({ path: HTML2PDF_BUNDLE });
 	await page.waitForFunction(
 		() =>
 			document.querySelectorAll('.paged-preview .pagedjs_page').length > 0 ||
@@ -346,44 +343,19 @@ async function collectExportMetrics(page, mode) {
 	}, mode);
 }
 
-async function collectGeneratedPdfPageCount(page) {
-	return page.evaluate(async () => {
-		const { PAPER_SIZES } = await import('/src/lib/config.js');
-		const { appState } = await import('/src/lib/state.svelte.js');
-		const { createPagedPdf, mountExportSnapshot, waitForExportSnapshot } = await import('/src/lib/export.js');
-		const snapshot = mountExportSnapshot({ mode: 'pdf' });
-		if (!snapshot) throw new Error('PDF-Snapshot fehlt.');
+function countPdfPages(pdfBuffer) {
+	const text = pdfBuffer.toString('latin1');
+	return (text.match(/\/Type\s*\/Page\b/g) || []).length;
+}
 
-		try {
-			await waitForExportSnapshot(snapshot.paper);
-			const format = (PAPER_SIZES[appState.paperSize] || PAPER_SIZES.A4).pdf;
-
-			if (snapshot.kind === 'paged') {
-				const pdf = await createPagedPdf(snapshot, format);
-				if (!pdf) throw new Error('Paged-PDF konnte nicht erzeugt werden.');
-				return pdf.internal.getNumberOfPages();
-			}
-
-			const html2pdf = window.html2pdf;
-			if (!html2pdf) throw new Error('html2pdf ist im Browserkontext nicht geladen.');
-			const pdf = await html2pdf()
-				.set({
-					margin: 0,
-					filename: 'regression.pdf',
-					image: { type: 'jpeg', quality: 0.98 },
-					html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-					jsPDF: { unit: 'mm', format, orientation: 'portrait' },
-					pagebreak: { mode: ['css'] }
-				})
-				.from(snapshot.paper)
-				.toPdf()
-				.get('pdf');
-
-			return pdf.internal.getNumberOfPages();
-		} finally {
-			snapshot.cleanup();
-		}
+async function collectBrowserPrintPageCount(page) {
+	const pdf = await page.pdf({
+		printBackground: true,
+		width: '210mm',
+		height: '297mm',
+		margin: { top: '0', right: '0', bottom: '0', left: '0' }
 	});
+	return countPdfPages(Buffer.from(pdf));
 }
 
 async function main() {
@@ -402,7 +374,7 @@ async function main() {
 			const preview = await collectPreviewMetrics(page);
 			const printSnapshot = await collectExportMetrics(page, 'print');
 			const pdfSnapshot = await collectExportMetrics(page, 'pdf');
-			const pdfPages = await collectGeneratedPdfPageCount(page);
+			const pdfPages = await collectBrowserPrintPageCount(page);
 
 			const previewBreaks = formatBreaks(preview.breaks);
 			const printBreaks = formatBreaks(printSnapshot.breaks);
@@ -426,7 +398,7 @@ async function main() {
 			console.log(`  Preview-Seiten: ${preview.pageCount}`);
 			console.log(`  Print-Snapshot: ${printSnapshot.pageCount}`);
 			console.log(`  PDF-Snapshot:   ${pdfSnapshot.pageCount}`);
-			console.log(`  PDF-Ausgabe Seiten: ${pdfPages}`);
+			console.log(`  Browser-PDF Seiten: ${pdfPages}`);
 			console.log(`  Preview == Print: ${previewMatchesPrint ? 'ja' : 'nein'}`);
 			console.log(`  Print == PDF-Snapshot: ${printMatchesPdf ? 'ja' : 'nein'}`);
 			console.log(`  PDF-Zahl passt: ${pdfPageCountMatches ? 'ja' : 'nein'}`);

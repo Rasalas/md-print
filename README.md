@@ -29,7 +29,7 @@ Write or paste Markdown on the left, see a typeset paper preview on the right, a
 - [Paged.js](https://pagedjs.org/) (CSS paged media and DOM pagination)
 - [KaTeX](https://katex.org/) (math rendering)
 - [highlight.js](https://highlightjs.org/) (syntax highlighting)
-- [html2canvas](https://html2canvas.hertzen.com/) + [jsPDF](https://github.com/parallax/jsPDF) (PDF export)
+- Browser print engine for printing and PDF export via the system print dialog
 - Static adapter — fully client-side, no server needed
 
 ## Getting started
