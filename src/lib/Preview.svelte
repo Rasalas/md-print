@@ -10,10 +10,13 @@
 	let pagedRef = $state();
 	let fallbackPaperRef = $state();
 	let activePreviewer;
-	let renderRun = 0;
+	let queuedRenderOptions;
+	let componentDestroyed = false;
 	let pageCount = $state(0);
 	let pagedError = $state(false);
 	let pagedReady = $state(false);
+	let isRendering = $state(false);
+	let hasVisiblePages = $state(false);
 
 	// Debounced rendering
 	let renderedResult = $state({ html: '', frontmatter: {}, headings: [] });
@@ -77,35 +80,59 @@
 
 	let documentHtml = $derived(`${frontmatterHtml}${tocHtml}${renderedResult.html}`);
 
-	function destroyPreviewer(previewer = activePreviewer) {
+	function destroyPreviewer(previewer = activePreviewer, options = {}) {
 		if (!previewer) return;
+		const { removePages = true } = options;
 		previewer.chunker?.stop?.();
-		previewer.chunker?.destroy?.();
+		if (removePages && previewer.chunker?.pagesArea) {
+			previewer.chunker.destroy();
+		} else {
+			for (const page of previewer.chunker?.pages || []) page.removeListeners?.();
+		}
 		previewer.polisher?.destroy?.();
 		if (previewer === activePreviewer) activePreviewer = null;
 	}
 
-	async function renderPagedDocument({ html, theme, language, pageSize, showPageNumbers }) {
-		const currentRun = ++renderRun;
+	async function renderPagedDocument(options) {
+		queuedRenderOptions = options;
+		if (isRendering) return;
+
+		isRendering = true;
+		try {
+			while (queuedRenderOptions && !componentDestroyed) {
+				const nextOptions = queuedRenderOptions;
+				queuedRenderOptions = null;
+				await renderPagedDocumentNow(nextOptions);
+			}
+		} finally {
+			isRendering = false;
+			hasVisiblePages = !!pagedRef?.querySelector('.pagedjs_page');
+			if (queuedRenderOptions && !componentDestroyed) renderPagedDocument(queuedRenderOptions);
+		}
+	}
+
+	async function renderPagedDocumentNow({ html, theme, language, pageSize, showPageNumbers }) {
 		const target = pagedRef;
 		if (!target) return;
 
-		pagedReady = false;
 		pagedError = false;
-		pageCount = 0;
-		destroyPreviewer();
-		target.innerHTML = '';
+		hasVisiblePages = !!target.querySelector('.pagedjs_page');
 
 		if (!html.trim()) {
+			destroyPreviewer();
+			target.innerHTML = '';
+			pageCount = 0;
+			hasVisiblePages = false;
 			pagedReady = true;
 			return;
 		}
 
+		let previewer;
 		try {
 			if (document.fonts?.ready) await document.fonts.ready;
 
 			const { Previewer } = await import('pagedjs');
-			if (currentRun !== renderRun) return;
+			if (queuedRenderOptions || componentDestroyed) return;
 
 			const source = document.createElement('div');
 			const paperSource = document.createElement('article');
@@ -115,27 +142,42 @@
 			paperSource.innerHTML = html;
 			source.appendChild(paperSource);
 
-			const previewer = new Previewer();
-			activePreviewer = previewer;
+			previewer = new Previewer();
 			const styles = createPagedStyles({ pageSize, showPageNumbers });
 			const flow = await previewer.preview(source, [{ [window.location.href]: styles }], target);
 
-			if (currentRun !== renderRun) {
+			if (queuedRenderOptions || componentDestroyed) {
 				destroyPreviewer(previewer);
 				return;
 			}
 
+			const pages = previewer.chunker?.pagesArea;
+			if (!pages) throw new Error('Paged preview did not produce pages.');
+
+			const previousPreviewer = activePreviewer;
+			activePreviewer = previewer;
+			if (pages.parentElement !== target) target.appendChild(pages);
+			for (const child of Array.from(target.children)) {
+				if (child !== pages) child.remove();
+			}
+			if (previousPreviewer && previousPreviewer !== previewer) {
+				destroyPreviewer(previousPreviewer, { removePages: false });
+			}
+
 			pageCount = flow.total || 0;
+			hasVisiblePages = true;
 			pagedReady = true;
 		} catch (error) {
-			if (currentRun !== renderRun) return;
 			console.error('Paged preview failed:', error);
-			destroyPreviewer();
-			pagedError = true;
-			pagedReady = false;
+			destroyPreviewer(previewer);
+			if (queuedRenderOptions || componentDestroyed) return;
+
+			pagedError = !target.querySelector('.pagedjs_page');
+			pagedReady = !pagedError;
+			hasVisiblePages = !pagedError;
 
 			await tick();
-			if (fallbackPaperRef) {
+			if (pagedError && fallbackPaperRef) {
 				paginatePaper(fallbackPaperRef, {
 					showPageNumbers: appState.showPageNumbers,
 					skipIfNarrow: true
@@ -145,7 +187,8 @@
 	}
 
 	onDestroy(() => {
-		renderRun += 1;
+		componentDestroyed = true;
+		queuedRenderOptions = null;
 		destroyPreviewer();
 	});
 
@@ -178,7 +221,7 @@
 		<div
 			bind:this={pagedRef}
 			class="paged-preview"
-			class:loading={!pagedReady && !pagedError}
+			class:rendering={isRendering && hasVisiblePages}
 			style={paperStyle}
 		></div>
 
@@ -225,11 +268,6 @@
 		max-width: 210mm;
 		flex-shrink: 0;
 		align-self: flex-start;
-		transition: opacity 0.15s ease;
-	}
-
-	.paged-preview.loading {
-		opacity: 0.45;
 	}
 
 	.paged-preview :global(.pagedjs_pages) {
@@ -249,6 +287,11 @@
 		border-radius: 2px;
 		overflow: hidden;
 		flex-shrink: 0;
+	}
+
+	.paged-preview.rendering > :global(.pagedjs_pages + .pagedjs_pages) {
+		opacity: 0;
+		pointer-events: none;
 	}
 
 	.fallback-paper {
